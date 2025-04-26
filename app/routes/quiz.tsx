@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams, useNavigate, useLoaderData } from "@remix-run/react";
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
@@ -48,10 +48,15 @@ export default function Quiz() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const effectRan = useRef(false);
 
   // Initialize authentication
   useEffect(() => {
     async function init() {
+      // Skip duplicate calls in development with StrictMode
+      if (effectRan.current) return;
+      effectRan.current = true;
+      
       try {
         if (!BASE_URL) {
           throw new Error("BASE_URL is not defined");
@@ -139,6 +144,9 @@ export default function Quiz() {
   };
 
   const loadQuestions = async () => {
+    // Prevent duplicate calls if already loading
+    if (isLoading) return;
+    
     if (authInitialized) {
       setError("Authentication not initialized. Please wait or refresh the page.");
       return;
