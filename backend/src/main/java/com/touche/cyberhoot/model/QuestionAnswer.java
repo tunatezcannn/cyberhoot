@@ -3,6 +3,8 @@ package com.touche.cyberhoot.model;
 import jakarta.persistence.*;
 import lombok.Builder;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "question_answers")
 @Builder
@@ -19,6 +21,12 @@ public class QuestionAnswer {
     private String userAnswer;
     private Integer score;
     private Boolean correct;
+
+    @Column(nullable = true, updatable = false)
+    private Instant createdAt;
+
+    @Column(nullable = true)
+    private Instant updatedAt;
 
     public Long getId() {
         return id;
@@ -58,5 +66,13 @@ public class QuestionAnswer {
 
     public void setCorrect(Boolean correct) {
         this.correct = correct;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

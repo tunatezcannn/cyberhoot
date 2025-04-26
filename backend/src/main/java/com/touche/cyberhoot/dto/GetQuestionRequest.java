@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class GetQuestionRequest {
+    private String username;
     private Integer difficulty;
     private String type;
     private String language;
@@ -48,5 +49,13 @@ public class GetQuestionRequest {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

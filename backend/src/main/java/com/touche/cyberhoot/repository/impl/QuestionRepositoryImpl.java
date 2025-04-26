@@ -11,6 +11,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -22,7 +23,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     @Autowired
     AppUserRepositoryImpl appUserRepository;
 
-    private final RowMapper<Question> questionMapper = (rs, rowNum) -> {
+    public final RowMapper<Question> questionMapper = (rs, rowNum) -> {
         Question question = Question.builder()
                 .id(rs.getLong("id"))
                 .question_type(rs.getString("question_type"))
@@ -39,8 +40,8 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     @Override
     public Question save(Question question) {
         if (question.getId() == null) {
-            String sql = "INSERT INTO question (question_type, question_text, correct, question_lang, topic, difficulty, question_options) "
-                    + "VALUES (:questionType, :questionText, :correct, :question_lang, :topic, :difficulty, :question_options)";
+            String sql = "INSERT INTO question (question_type, question_text, correct, question_lang, topic, difficulty, question_options, solving_time, quiz_id) "
+                    + "VALUES (:questionType, :questionText, :correct, :question_lang, :topic, :difficulty, :question_options, :solvingTime, :quizId)";
 
             MapSqlParameterSource params = new MapSqlParameterSource()
                     .addValue("questionType", question.getQuestionType())
@@ -49,7 +50,9 @@ public class QuestionRepositoryImpl implements QuestionRepository {
                     .addValue("question_lang", question.getQuestionLang())
                     .addValue("topic", question.getTopic())
                     .addValue("difficulty", question.getDifficulty())
-                    .addValue("question_options", question.getQuestionOptions());
+                    .addValue("question_options", question.getQuestionOptions())
+                    .addValue("solvingTime", question.getSolvingTime())
+                    .addValue("quizId", question.getQuiz().getId());
 
             KeyHolder keyHolder = new GeneratedKeyHolder();
             jdbcTemplate.update(sql, params, keyHolder, new String[]{"id"});
@@ -63,6 +66,8 @@ public class QuestionRepositoryImpl implements QuestionRepository {
                     + "    topic = :topic, "
                     + "    difficulty = :difficulty, "
                     + "    question_options = :question_options "
+                    + "    solving_time = :solvingTime "
+                    + "    quiz_id = :quizId "
                     + "WHERE id = :id";
 
             MapSqlParameterSource params = new MapSqlParameterSource()
@@ -73,6 +78,8 @@ public class QuestionRepositoryImpl implements QuestionRepository {
                     .addValue("topic", question.getTopic())
                     .addValue("difficulty", question.getDifficulty())
                     .addValue("question_options", question.getQuestionOptions())
+                    .addValue("solvingTime", question.getSolvingTime())
+                    .addValue("quizId", question.getQuiz().getId())
                     .addValue("id", question.getId());
 
             jdbcTemplate.update(sql, params);
@@ -92,5 +99,15 @@ public class QuestionRepositoryImpl implements QuestionRepository {
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public List<Question> findByQuizId(Long quizId) {
+        String sql = "SELECT * FROM question WHERE quiz_id = :quizId";
+        return jdbcTemplate.query(
+                sql,
+                new MapSqlParameterSource("quizId", quizId),
+                questionMapper
+        );
     }
 }

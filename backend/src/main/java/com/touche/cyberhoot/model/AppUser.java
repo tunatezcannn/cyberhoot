@@ -1,6 +1,9 @@
 package com.touche.cyberhoot.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 
@@ -25,10 +28,10 @@ public class AppUser {
     @JoinColumn(name = "game_session_id")
     private GameSession gameSession;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = true, updatable = false)
     private Instant createdAt;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private Instant updatedAt;
 
     @PrePersist

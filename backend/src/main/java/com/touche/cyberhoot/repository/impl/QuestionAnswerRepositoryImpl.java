@@ -11,6 +11,9 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.dao.EmptyResultDataAccessException;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -31,14 +34,8 @@ public class QuestionAnswerRepositoryImpl implements QuestionAnswerRepository {
                     .userAnswer(rs.getString("user_answer"))
                     .score(rs.getInt("score"))
                     .correct(rs.getBoolean("correct"))
+                    .createdAt(rs.getTimestamp("created_at").toInstant())
                     .build();
-
-    @Autowired
-    public QuestionAnswerRepositoryImpl(NamedParameterJdbcTemplate jdbcTemplate,
-                                        QuestionRepositoryImpl questionRepository) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.questionRepository = questionRepository;
-    }
 
     @Override
     public QuestionAnswer save(QuestionAnswer qa) {
@@ -46,20 +43,18 @@ public class QuestionAnswerRepositoryImpl implements QuestionAnswerRepository {
                 .addValue("questionId", qa.getQuestion().getId())
                 .addValue("userAnswer", qa.getUserAnswer())
                 .addValue("score", qa.getScore())
-                .addValue("correct", qa.getCorrect());
+                .addValue("correct", qa.getCorrect())
+                .addValue("createdAt", Timestamp.from(Instant.now()))
+                .addValue("updatedAt", Timestamp.from(Instant.now()));
 
         if (qa.getId() == null) {
-            // INSERT + retrieve generated key
             String sql = ""
                     + "INSERT INTO question_answers "
-                    + "(question_id, user_answer, score, correct) "
-                    + "VALUES (:questionId, :userAnswer, :score, :correct)";
+                    + "(question_id, user_answer, score, correct, updated_at, created_at) "
+                    + "VALUES (:questionId, :userAnswer, :score, :correct, :updatedAt, :createdAt)";
             KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(sql, params, keyHolder);
-            Number key = keyHolder.getKey();
-            if (key != null) {
-                qa.setId(key.longValue());
-            }
+            jdbcTemplate.update(sql, params, keyHolder, new String[]{"id"});
+            qa.setId(keyHolder.getKey().longValue());
         } else {
             params.addValue("id", qa.getId());
             String sql = ""
@@ -67,11 +62,11 @@ public class QuestionAnswerRepositoryImpl implements QuestionAnswerRepository {
                     + "SET question_id = :questionId, "
                     + "user_answer = :userAnswer, "
                     + "score       = :score, "
-                    + "correct     = :correct "
+                    + "correct     = :correct, "
+                    + "updated_at  = :updatedAt "
                     + "WHERE id = :id";
             jdbcTemplate.update(sql, params);
         }
-
         return qa;
     }
 
@@ -82,6 +77,18 @@ public class QuestionAnswerRepositoryImpl implements QuestionAnswerRepository {
         try {
             QuestionAnswer qa = jdbcTemplate.queryForObject(sql, params, questionAnswerMapper);
             return Optional.ofNullable(qa);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public Optional<QuestionAnswer> findByQuestionId(Long questionId) {
+        String sql = "SELECT * FROM question_answers WHERE question_id = :questionId";
+        MapSqlParameterSource params = new MapSqlParameterSource("questionId", questionId);
+        try {
+            QuestionAnswer questionAnswer = jdbcTemplate.queryForObject(sql, params, questionAnswerMapper);
+            return Optional.ofNullable(questionAnswer);
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }

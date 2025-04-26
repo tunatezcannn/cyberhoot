@@ -3,12 +3,10 @@ package com.touche.cyberhoot.dto;
 import lombok.Data;
 
 @Data
-public class SubmitAnswerRequest {
+public class SubmitOpenEndedAnswerRequest {
     private Long questionId;
     private String userAnswer;
     private String userName;
-    private Integer score;
-    private Boolean correct;
 
     public Long getQuestionId() {
         return questionId;
@@ -29,21 +27,5 @@ public class SubmitAnswerRequest {
     }
     public void setUserName(String userName) {
         this.userName = userName;
-    }
-
-    public Integer getScore() {
-        return score;
-    }
-
-    public void setScore(Integer score) {
-        this.score = score;
-    }
-
-    public Boolean getCorrect() {
-        return correct;
-    }
-
-    public void setCorrect(Boolean correct) {
-        this.correct = correct;
     }
 }

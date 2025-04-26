@@ -1,9 +1,6 @@
 package com.touche.cyberhoot.controller;
 
-import com.touche.cyberhoot.dto.GetExplanationRequest;
-import com.touche.cyberhoot.dto.GetQuestionRequest;
-import com.touche.cyberhoot.dto.GetSessionQuestionRequest;
-import com.touche.cyberhoot.dto.SubmitAnswerRequest;
+import com.touche.cyberhoot.dto.*;
 import com.touche.cyberhoot.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -36,5 +33,10 @@ public class QuestionController {
     @PostMapping("/getSessionQuestions")
     public List<Map<String, Object>> getSessionQuestions(@RequestBody GetSessionQuestionRequest input) {
         return questionService.getSessionQuestions(input);
+    }
+
+    @PostMapping("/getAllAnsweredQuestionsAndQuizzes")
+    public List<Map<String, Object>> getAllAnsweredQuestionsAndQuizzes(@RequestBody GetAllAnsweredQuestionsAndQuizzesRequest input) {
+        return questionService.getAllAnsweredQuestionsAndQuizzes(input);
     }
 }

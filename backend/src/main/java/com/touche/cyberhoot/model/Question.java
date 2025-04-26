@@ -34,6 +34,12 @@ public class Question {
     private String topic;
     private Integer difficulty;
 
+    private Integer solving_time;
+
+    @ManyToOne
+    @JoinColumn(name = "quiz_id")
+    private Quiz quiz;
+
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuestionAnswer> answers;
 
@@ -115,5 +121,21 @@ public class Question {
 
     public void setGameSession(GameSession gameSession) {
         this.gameSession = gameSession;
+    }
+
+    public Quiz getQuiz() {
+        return quiz;
+    }
+
+    public void setQuiz(Quiz quiz) {
+        this.quiz = quiz;
+    }
+
+    public Integer getSolvingTime() {
+        return solving_time;
+    }
+
+    public void setSolvingTime(Integer solving_time) {
+        this.solving_time = solving_time;
     }
 }

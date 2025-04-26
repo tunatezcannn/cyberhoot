@@ -4,20 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.touche.cyberhoot.constants.Prompts;
-import com.touche.cyberhoot.dto.GetExplanationRequest;
-import com.touche.cyberhoot.dto.GetQuestionRequest;
-import com.touche.cyberhoot.dto.GetSessionQuestionRequest;
-import com.touche.cyberhoot.dto.SubmitAnswerRequest;
-import com.touche.cyberhoot.model.GameSession;
-import com.touche.cyberhoot.model.Question;
-import com.touche.cyberhoot.model.QuestionAnswer;
-import com.touche.cyberhoot.repository.QuestionAnswerRepository;
-import com.touche.cyberhoot.repository.QuestionRepository;
-import com.touche.cyberhoot.repository.SessionRepository;
+import com.touche.cyberhoot.dto.*;
+import com.touche.cyberhoot.model.*;
+import com.touche.cyberhoot.repository.*;
 import com.touche.cyberhoot.utils.OpenAPIUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 @Service
@@ -32,9 +26,26 @@ public class QuestionService {
     @Autowired
     private SessionRepository sessionRepository;
 
+    @Autowired
+    private QuizRepository quizRepository;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+
     ObjectMapper mapper = new ObjectMapper();
 
     public List<Map<String, Object>> getQuestions(GetQuestionRequest input) {
+        Quiz quiz = Quiz.builder()
+                .quiz_name(input.getTopic() + " Quiz")
+                .quiz_description(input.getTopic() + " Quiz Description" + input.getLanguage())
+                .quiz_lang(input.getLanguage())
+                .quiz_type(input.getType())
+                .quiz_time_limit(150)
+                .build();
+        AppUser appUser = appUserRepository.findByUsername(input.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username"));
+
+        quiz.setAppUser(appUser);
 
         int difficulty = input.getDifficulty();
         String type = input.getType().trim().toLowerCase(Locale.ROOT);
@@ -48,21 +59,29 @@ public class QuestionService {
         String rawJson = extract(OpenAPIUtils.sendRequest(prompt)).trim();
 
         ObjectMapper mapper = new ObjectMapper();
-        Map<String, Map<String, Object>> root = null;
+        Map<String, Object> root = null;
         try {
             root = mapper.readValue(rawJson, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
-        if (root.size() != count)
+        String categorizedTopic = Objects.toString(root.get("topic"), "").trim();
+        if (categorizedTopic.isEmpty()) {
+            throw new IllegalStateException("Categorized topic is missing in the response");
+        }
+        quiz.setQuizTopic(categorizedTopic);
+        quiz = quizRepository.save(quiz);
+
+        Map<String, Map<String, Object>> questions = (Map<String, Map<String, Object>>) root.get("questions");
+        if (questions.size() != count)
             throw new IllegalStateException("Expected " + count +
-                    " questions but got " + root.size() + ". Raw GPT output:\n" + rawJson);
+                    " questions but got " + questions.size() + ". Raw GPT output:\n" + rawJson);
 
         List<Map<String, Object>> out = new ArrayList<>(count);
 
         for (int i = 1; i <= count; i++) {
-            Map<String, Object> qMap = root.get("question" + i);
+            Map<String, Object> qMap = questions.get("question" + i);
             if (qMap == null)
                 throw new IllegalStateException("Missing key question" + i);
 
@@ -71,16 +90,19 @@ public class QuestionService {
             Question.QuestionBuilder qb = Question.builder()
                     .question_type(type)
                     .question_lang(language)
-                    .topic(topic)
+                    .topic(categorizedTopic)
                     .difficulty(difficulty)
+                    .quiz(quiz)
+                    .solving_time(Integer.valueOf(qMap.get("solvingTime").toString()))
                     .question_text(text);
 
             Map<String, Object> resp = new LinkedHashMap<>();
             resp.put("type", type);
             resp.put("language", language);
-            resp.put("topic", topic);
+            resp.put("topic", categorizedTopic);
             resp.put("difficulty", difficulty);
             resp.put("text", text);
+            resp.put("solvingTime", qMap.get("solvingTime"));
 
             if ("mcq".equals(type)) {
                 @SuppressWarnings("unchecked")
@@ -114,7 +136,7 @@ public class QuestionService {
 
         if ("mcq".equals(question.getQuestionType())) {
             correct = userAnswer.equalsIgnoreCase(question.getCorrect());
-            score = correct ? 100 : 0;
+            score = input.getScore();
         } else {
             String prompt = Prompts.OPEN_EVAL_PROMPT.formatted(question.getQuestionText(), userAnswer);
             String rawResponse = OpenAPIUtils.sendRequest(prompt);
@@ -127,7 +149,7 @@ public class QuestionService {
             }
 
             correct = responseJson.get("correct").asBoolean();
-            score = Math.max(1, Math.min(100, responseJson.get("score").asInt()));
+            score = Math.max(1, Math.min(500, responseJson.get("score").asInt()));
         }
 
         QuestionAnswer savedAnswer = answerRepository.save(QuestionAnswer.builder()
@@ -185,7 +207,46 @@ public class QuestionService {
         return response;
     }
 
+    public List<Map<String, Object>> getAllAnsweredQuestionsAndQuizzes(GetAllAnsweredQuestionsAndQuizzesRequest input) {
+        AppUser appUser = appUserRepository.findByUsername(input.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid username"));
 
+        List<Quiz> quizzes = quizRepository.findByAppUserId(appUser.getId());
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (Quiz quiz : quizzes) {
+            Map<String, Object> quizData = new LinkedHashMap<>();
+            quizData.put("quizId", quiz.getId());
+            quizData.put("quizName", quiz.getQuizName());
+            quizData.put("quizDescription", quiz.getQuizDescription());
+            quizData.put("quizLang", quiz.getQuizLang());
+            quizData.put("quizType", quiz.getQuizType());
+            quizData.put("quizTimeLimit", quiz.getQuizTimeLimit());
+            quizData.put("quizCreatedAt", quiz.getCreatedAt());
+            quizData.put("quizTopic", quiz.getQuizTopic());
+
+            List<Map<String, Object>> answeredQuestions = new ArrayList<>();
+            List<Question> questions = questionRepository.findByQuizId(quiz.getId());
+            for (Question question : questions) {
+                Optional<QuestionAnswer> answerOpt = answerRepository.findByQuestionId(question.getId());
+                if (answerOpt.isPresent()) {
+                    QuestionAnswer answer = answerOpt.get();
+                    Map<String, Object> questionData = new LinkedHashMap<>();
+                    questionData.put("questionId", question.getId());
+                    questionData.put("questionText", question.getQuestionText());
+                    questionData.put("userAnswer", answer.getUserAnswer());
+                    questionData.put("correct", answer.getCorrect());
+                    questionData.put("score", answer.getScore());
+                    questionData.put("createdAt", answer.getCreatedAt());
+                    answeredQuestions.add(questionData);
+                }
+            }
+            quizData.put("answeredQuestions", answeredQuestions);
+            response.add(quizData);
+        }
+
+        return response;
+    }
     /* --------------------------------------------------------------------- */
     private String extract(String openAiJson) {
         try {
