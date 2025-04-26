@@ -9,21 +9,11 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginResponse {
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private String token;
+public class RegisterResponse {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String userName;
     @JsonIgnore
     private int httpStatus;
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
 
     public String getUserName() {
         return userName;

@@ -2,6 +2,8 @@ package com.touche.cyberhoot.controller;
 
 import com.touche.cyberhoot.dto.LoginRequest;
 import com.touche.cyberhoot.dto.LoginResponse;
+import com.touche.cyberhoot.dto.RegisterRequest;
+import com.touche.cyberhoot.dto.RegisterResponse;
 import com.touche.cyberhoot.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,12 @@ public class AuthController {
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         LoginResponse response = authService.login(loginRequest);
+        return ResponseEntity.status(response.getHttpStatus()).body(response);
+    }
+
+    @RequestMapping(value = "/register", method = RequestMethod.POST)
+    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest registerRequest) {
+        RegisterResponse response = authService.register(registerRequest);
         return ResponseEntity.status(response.getHttpStatus()).body(response);
     }
 

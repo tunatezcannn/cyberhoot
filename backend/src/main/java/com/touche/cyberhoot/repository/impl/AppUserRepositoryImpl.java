@@ -27,8 +27,6 @@ public class AppUserRepositoryImpl implements AppUserRepository {
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password"));
         user.setEmail(rs.getString("email"));
-        user.setAvatar(rs.getString("avatar"));
-        user.setColor(rs.getString("color"));
 
         return user;
     };
@@ -62,17 +60,15 @@ public class AppUserRepositoryImpl implements AppUserRepository {
     private AppUser insert(AppUser appUser) {
         String sql = """
         INSERT INTO app_user
-          (id, name, email, password, avatar, color)
-        VALUES (?, ?, ?, ?, ?, ?)
+          (id, username, email, password)
+        VALUES (?, ?, ?, ?)
         """;
 
         jdbcTemplate.update(sql,
                 appUser.getId(),
                 appUser.getUsername(),
                 appUser.getEmail(),
-                appUser.getPassword(),
-                appUser.getAvatar(),
-                appUser.getColor()
+                appUser.getPassword()
         );
 
         return appUser;
@@ -80,15 +76,13 @@ public class AppUserRepositoryImpl implements AppUserRepository {
 
 
     private AppUser update(AppUser appUser) {
-        String sql = "UPDATE app_user SET name = ?, surname = ?, username = ?, password = ?, " +
-                "email = ?, phone = ?, user_role = ?, company_id = ? WHERE id = ?";
+        String sql = "UPDATE app_user SET username = ?, password = ?, " +
+                "email = ?  WHERE id = ?";
 
         jdbcTemplate.update(sql,
                 appUser.getUsername(),
                 appUser.getPassword(),
                 appUser.getEmail(),
-                appUser.getAvatar(),
-                appUser.getColor(),
                 appUser.getId());
 
         return appUser;

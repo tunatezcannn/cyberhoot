@@ -13,21 +13,33 @@ public class GameSession {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String code;
-    private String hostId;
+
+    @OneToOne
+    @JoinColumn(name = "host_id", referencedColumnName = "id")
+    private AppUser host;
 
     @Enumerated(EnumType.STRING)
     private Enums.SessionStatus status;
 
     @OneToMany(mappedBy = "gameSession", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Player> players;
+    private List<AppUser> players;
 
+    private Integer count;
     private String topic;
     private String questionType;
-    private int currentQuestionIndex;
     private Long startTime;
     private Long endTime;
 
-    // Getters and setters
+    @OneToMany(mappedBy = "gameSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Question> questions;
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
+    }
+
     public Long getId() {
         return id;
     }
@@ -44,12 +56,12 @@ public class GameSession {
         this.code = code;
     }
 
-    public String getHostId() {
-        return hostId;
+    public AppUser getHost() {
+        return host;
     }
 
-    public void setHostId(String hostId) {
-        this.hostId = hostId;
+    public void setHost(AppUser host) {
+        this.host = host;
     }
 
     public Enums.SessionStatus getStatus() {
@@ -60,11 +72,11 @@ public class GameSession {
         this.status = status;
     }
 
-    public List<Player> getPlayers() {
+    public List<AppUser> getPlayers() {
         return players;
     }
 
-    public void setPlayers(List<Player> players) {
+    public void setPlayers(List<AppUser> players) {
         this.players = players;
     }
 
@@ -84,14 +96,6 @@ public class GameSession {
         this.questionType = questionType;
     }
 
-    public int getCurrentQuestionIndex() {
-        return currentQuestionIndex;
-    }
-
-    public void setCurrentQuestionIndex(int currentQuestionIndex) {
-        this.currentQuestionIndex = currentQuestionIndex;
-    }
-
     public Long getStartTime() {
         return startTime;
     }
@@ -106,5 +110,13 @@ public class GameSession {
 
     public void setEndTime(Long endTime) {
         this.endTime = endTime;
+    }
+
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
     }
 }

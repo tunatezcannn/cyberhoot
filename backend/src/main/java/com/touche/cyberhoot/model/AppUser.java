@@ -21,11 +21,9 @@ public class AppUser {
     @Column(nullable = false)
     private String password;
 
-    @Column
-    private String avatar;
-
-    @Column
-    private String color;
+    @ManyToOne
+    @JoinColumn(name = "game_session_id")
+    private GameSession gameSession;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
@@ -76,20 +74,12 @@ public class AppUser {
         this.password = password;
     }
 
-    public String getAvatar() {
-        return avatar;
+    public GameSession getGameSession() {
+        return gameSession;
     }
 
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
-    public String getColor() {
-        return color;
-    }
-
-    public void setColor(String color) {
-        this.color = color;
+    public void setGameSession(GameSession gameSession) {
+        this.gameSession = gameSession;
     }
 
     public Instant getCreatedAt() {

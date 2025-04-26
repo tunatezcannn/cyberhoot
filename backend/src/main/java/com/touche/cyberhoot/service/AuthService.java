@@ -2,6 +2,8 @@ package com.touche.cyberhoot.service;
 
 import com.touche.cyberhoot.dto.LoginRequest;
 import com.touche.cyberhoot.dto.LoginResponse;
+import com.touche.cyberhoot.dto.RegisterRequest;
+import com.touche.cyberhoot.dto.RegisterResponse;
 import com.touche.cyberhoot.exception.AuthException;
 import com.touche.cyberhoot.model.AppUser;
 import com.touche.cyberhoot.repository.impl.AppUserRepositoryImpl;
@@ -63,6 +65,27 @@ public class AuthService {
             throw new AuthException("AUTHORIZATION HEADER NOT FOUND OR INVALID FORMAT");
         } catch (AuthException e) {
             throw e;
+        } catch (Exception e) {
+            throw new AuthException("UNKNOWN ERROR");
+        }
+    }
+
+    public RegisterResponse register(RegisterRequest registerRequest) {
+        try {
+            if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
+                throw new AuthException("USERNAME ALREADY EXISTS");
+            }
+            AppUser user = new AppUser();
+            user.setUsername(registerRequest.getUsername());
+            user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+            user.setEmail(registerRequest.getEmail());
+            userRepository.save(user);
+
+            RegisterResponse registerResponse = new RegisterResponse();
+            registerResponse.setUserName(user.getUsername());
+            registerResponse.setHttpStatus(HttpStatus.CREATED.value());
+
+            return registerResponse;
         } catch (Exception e) {
             throw new AuthException("UNKNOWN ERROR");
         }

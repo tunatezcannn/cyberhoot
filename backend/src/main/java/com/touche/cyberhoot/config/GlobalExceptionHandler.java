@@ -17,4 +17,12 @@ public class GlobalExceptionHandler {
         responseDTO.setHttpStatus(HttpStatus.UNAUTHORIZED.value());
         return new ResponseEntity<>(responseDTO, HttpStatus.UNAUTHORIZED);
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<GeneralErrorResponse> handleGeneralException(RuntimeException ex) {
+        GeneralErrorResponse responseDTO = new GeneralErrorResponse();
+        responseDTO.setErrorMessage(ex.getMessage());
+        responseDTO.setHttpStatus(HttpStatus.BAD_REQUEST.value());
+        return new ResponseEntity<>(responseDTO, HttpStatus.BAD_REQUEST);
+    }
 }
