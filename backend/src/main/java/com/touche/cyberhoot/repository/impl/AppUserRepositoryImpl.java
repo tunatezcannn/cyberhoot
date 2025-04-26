@@ -23,7 +23,7 @@ public class AppUserRepositoryImpl implements AppUserRepository {
 
     private final RowMapper<AppUser> appUserRowMapper = (rs, rowNum) -> {
         AppUser user = new AppUser();
-        user.setId(String.valueOf(rs.getLong("id")));
+        user.setId(rs.getLong("id"));
         user.setUsername(rs.getString("username"));
         user.setPassword(rs.getString("password"));
         user.setEmail(rs.getString("email"));

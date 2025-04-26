@@ -8,7 +8,8 @@ import jakarta.persistence.*;
 public class Player {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private String avatar;
     private String color;
@@ -28,28 +29,99 @@ public class Player {
     private GameSession gameSession;
 
     // Getters and setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getAvatar() { return avatar; }
-    public void setAvatar(String avatar) { this.avatar = avatar; }
-    public String getColor() { return color; }
-    public void setColor(String color) { this.color = color; }
-    public int getScore() { return score; }
-    public void setScore(int score) { this.score = score; }
-    public boolean isHost() { return isHost; }
-    public void setHost(boolean host) { isHost = host; }
-    public boolean isYou() { return isYou; }
-    public void setYou(boolean you) { isYou = you; }
-    public Enums.PlayerStatus getStatus() { return status; }
-    public void setStatus(Enums.PlayerStatus status) { this.status = status; }
-    public Long getAnswerTime() { return answerTime; }
-    public void setAnswerTime(Long answerTime) { this.answerTime = answerTime; }
-    public int getCorrectAnswers() { return correctAnswers; }
-    public void setCorrectAnswers(int correctAnswers) { this.correctAnswers = correctAnswers; }
-    public String getCurrentAnswer() { return currentAnswer; }
-    public void setCurrentAnswer(String currentAnswer) { this.currentAnswer = currentAnswer; }
-    public GameSession getGameSession() { return gameSession; }
-    public void setGameSession(GameSession gameSession) { this.gameSession = gameSession; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
+    }
+
+    public boolean isHost() {
+        return isHost;
+    }
+
+    public void setHost(boolean host) {
+        isHost = host;
+    }
+
+    public boolean isYou() {
+        return isYou;
+    }
+
+    public void setYou(boolean you) {
+        isYou = you;
+    }
+
+    public Enums.PlayerStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(Enums.PlayerStatus status) {
+        this.status = status;
+    }
+
+    public Long getAnswerTime() {
+        return answerTime;
+    }
+
+    public void setAnswerTime(Long answerTime) {
+        this.answerTime = answerTime;
+    }
+
+    public int getCorrectAnswers() {
+        return correctAnswers;
+    }
+
+    public void setCorrectAnswers(int correctAnswers) {
+        this.correctAnswers = correctAnswers;
+    }
+
+    public String getCurrentAnswer() {
+        return currentAnswer;
+    }
+
+    public void setCurrentAnswer(String currentAnswer) {
+        this.currentAnswer = currentAnswer;
+    }
+
+    public GameSession getGameSession() {
+        return gameSession;
+    }
+
+    public void setGameSession(GameSession gameSession) {
+        this.gameSession = gameSession;
+    }
 }

@@ -9,7 +9,8 @@ import java.time.Instant;
 public class AppUser {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -43,11 +44,11 @@ public class AppUser {
         updatedAt = Instant.now();
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

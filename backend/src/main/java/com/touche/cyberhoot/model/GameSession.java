@@ -10,7 +10,8 @@ import java.util.List;
 public class GameSession {
 
     @Id
-    private String id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String code;
     private String hostId;
 
@@ -27,24 +28,83 @@ public class GameSession {
     private Long endTime;
 
     // Getters and setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-    public String getCode() { return code; }
-    public void setCode(String code) { this.code = code; }
-    public String getHostId() { return hostId; }
-    public void setHostId(String hostId) { this.hostId = hostId; }
-    public Enums.SessionStatus getStatus() { return status; }
-    public void setStatus(Enums.SessionStatus status) { this.status = status; }
-    public List<Player> getPlayers() { return players; }
-    public void setPlayers(List<Player> players) { this.players = players; }
-    public String getTopic() { return topic; }
-    public void setTopic(String topic) { this.topic = topic; }
-    public String getQuestionType() { return questionType; }
-    public void setQuestionType(String questionType) { this.questionType = questionType; }
-    public int getCurrentQuestionIndex() { return currentQuestionIndex; }
-    public void setCurrentQuestionIndex(int currentQuestionIndex) { this.currentQuestionIndex = currentQuestionIndex; }
-    public Long getStartTime() { return startTime; }
-    public void setStartTime(Long startTime) { this.startTime = startTime; }
-    public Long getEndTime() { return endTime; }
-    public void setEndTime(Long endTime) { this.endTime = endTime; }
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(String hostId) {
+        this.hostId = hostId;
+    }
+
+    public Enums.SessionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(Enums.SessionStatus status) {
+        this.status = status;
+    }
+
+    public List<Player> getPlayers() {
+        return players;
+    }
+
+    public void setPlayers(List<Player> players) {
+        this.players = players;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    public String getQuestionType() {
+        return questionType;
+    }
+
+    public void setQuestionType(String questionType) {
+        this.questionType = questionType;
+    }
+
+    public int getCurrentQuestionIndex() {
+        return currentQuestionIndex;
+    }
+
+    public void setCurrentQuestionIndex(int currentQuestionIndex) {
+        this.currentQuestionIndex = currentQuestionIndex;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Long startTime) {
+        this.startTime = startTime;
+    }
+
+    public Long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Long endTime) {
+        this.endTime = endTime;
+    }
 }
