@@ -138,7 +138,6 @@ export default function Quiz() {
         5, // Number of questions to fetch
         BASE_URL
       );
-      //console.log((await fetchPromise));
       
       // Set a timeout to ensure we don't wait too long for questions
       const timeoutPromise = new Promise<QuizQuestion[]>((_, reject) => {
