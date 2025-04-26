@@ -1,15 +1,121 @@
-import type { MetaFunction } from "@remix-run/node";
-import Dashboard from "~/components/Dashboard";
+import type { MetaFunction } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "Quiz App" },
-    { name: "description", content: "Quiz application with multiple topics and question types" },
+    { title: "CyberHoot - Secure Your Knowledge" },
+    { name: "description", content: "Test and improve your cybersecurity knowledge with CyberHoot" },
   ];
 };
 
 export default function Index() {
-  return <Dashboard />;
+  return (
+    <div className="flex min-h-screen flex-col bg-cyber-dark">
+      {/* Header */}
+      <header className="border-b border-cyber-border bg-cyber-navy p-4">
+        <div className="mx-auto flex max-w-7xl items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <svg className="h-7 w-7 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h1 className="text-2xl font-bold text-white text-glow">CyberHoot</h1>
+          </div>
+          <nav className="flex items-center space-x-4">
+            <Link to="/login" className="rounded-md px-4 py-2 text-sm font-medium text-white hover:text-cyber-green">
+              Login
+            </Link>
+            <Link to="/register" className="rounded-md bg-cyber-green px-4 py-2 text-sm font-medium text-cyber-dark transition-colors hover:bg-opacity-90">
+              Register
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <main className="flex flex-1 flex-col items-center justify-center px-4 text-center">
+        <div className="relative mx-auto max-w-3xl">
+          {/* Decorative elements */}
+          <div className="absolute -left-20 -top-20 h-64 w-64 rounded-full bg-cyber-green opacity-10 blur-xl"></div>
+          <div className="absolute -bottom-20 -right-20 h-64 w-64 rounded-full bg-cyber-green opacity-10 blur-xl"></div>
+          
+          <div className="relative z-10">
+            <h2 className="mb-6 text-5xl font-bold text-white">Secure Your <span className="text-cyber-green">Knowledge</span></h2>
+            <p className="mb-8 text-xl text-gray-400">Test and improve your cybersecurity skills with interactive quizzes and challenges.</p>
+            
+            <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
+              <Link 
+                to="/login" 
+                className="w-full rounded-md border border-cyber-green bg-transparent px-6 py-3 text-base font-medium text-cyber-green transition-colors hover:bg-cyber-green hover:text-cyber-dark sm:w-auto"
+              >
+                Login
+              </Link>
+              <Link 
+                to="/register" 
+                className="group relative w-full overflow-hidden rounded-md bg-cyber-green px-6 py-3 text-base font-medium text-cyber-dark transition-all duration-300 hover:bg-opacity-90 sm:w-auto"
+              >
+                <span className="relative z-10 flex items-center justify-center">
+                  Register Now
+                  <svg className="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+        
+        {/* Features section */}
+        <div className="mt-20 grid w-full max-w-5xl grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="rounded-lg border border-cyber-border bg-cyber-navy p-6">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyber-green bg-opacity-10">
+              <svg className="h-6 w-6 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-white">Cybersecurity Quizzes</h3>
+            <p className="text-gray-400">Test your knowledge across various cybersecurity domains with our specialized quizzes.</p>
+          </div>
+          
+          <div className="rounded-lg border border-cyber-border bg-cyber-navy p-6">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyber-green bg-opacity-10">
+              <svg className="h-6 w-6 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-white">Skill Tracking</h3>
+            <p className="text-gray-400">Monitor your progress and identify areas for improvement with detailed analytics.</p>
+          </div>
+          
+          <div className="rounded-lg border border-cyber-border bg-cyber-navy p-6">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-cyber-green bg-opacity-10">
+              <svg className="h-6 w-6 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-white">Instant Feedback</h3>
+            <p className="text-gray-400">Receive immediate insights and explanations to help deepen your understanding.</p>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-cyber-border bg-cyber-navy py-8">
+        <div className="mx-auto max-w-7xl px-4">
+          <div className="flex flex-col items-center justify-between md:flex-row">
+            <div className="mb-4 flex items-center md:mb-0">
+              <span className="text-sm text-gray-400">© 2023 CyberHoot. All rights reserved.</span>
+            </div>
+            <div className="flex items-center space-x-1 text-xs text-gray-500">
+              <svg className="h-3 w-3 animate-pulse-slow text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="12" />
+              </svg>
+              <span>Secure your knowledge</span>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 const resources = [
