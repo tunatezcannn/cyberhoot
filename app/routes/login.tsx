@@ -17,35 +17,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Get API base URL from environment variables, with fallback
   const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
   
-  try {
-    // Try to check if the API is available (optional, can be removed)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    
-    try {
-      // Perform a lightweight check to see if the server is up
-      await fetch(`${BASE_URL}/health`, { 
-        method: 'GET',
-        signal: controller.signal 
-      });
-    } catch (e) {
-      // Server is not responding, we'll just continue with the fallback
-      console.log("API server not available, will use mock data");
-    } finally {
-      clearTimeout(timeoutId);
-    }
-    
-    return json({
-      BASE_URL,
-      apiAvailable: true
-    });
-  } catch (error) {
-    // In case of any error, still return with apiAvailable: false
-    return json({
-      BASE_URL,
-      apiAvailable: false
-    });
-  }
+
+  return json({
+    BASE_URL,
+  });
 };
 
 export const meta: MetaFunction = () => {
@@ -58,7 +33,7 @@ export const meta: MetaFunction = () => {
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { BASE_URL, apiAvailable } = useLoaderData<typeof loader>();
+  const { BASE_URL } = useLoaderData<typeof loader>();
   const [formData, setFormData] = useState({
     username: "",
     password: ""
@@ -79,22 +54,7 @@ export default function Login() {
     try {
       setLoading(true);
       
-      const apiBaseUrl = BASE_URL || "http://localhost:3001";
-      
-      // If the API is not available, use a mock response with fallback token
-      if (!apiAvailable) {
-        console.log("Using mock login data since API is not available");
-        
-        // Simulate some delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Use the fallback token from authService
-        setAuthToken("FALLBACK_TOKEN");
-        
-        // Navigate to dashboard after "login"
-        navigate("/dashboard");
-        return;
-      }
+      const apiBaseUrl = BASE_URL;
       
       const response = await fetch(`${apiBaseUrl}/ws/auth/login`, {
         method: "POST",
@@ -111,9 +71,7 @@ export default function Login() {
       if (!response.ok) {
         throw new Error(`Login failed: ${response.status} ${response.statusText}`);
       }
-      
-      const data = await response.json();
-      
+            
       // Store token in cookie (this is already handled in authService.login)
       login({
         username: formData.username,
@@ -205,18 +163,8 @@ export default function Login() {
                   type="checkbox"
                   className="h-4 w-4 rounded border-cyber-border bg-cyber-dark text-cyber-green focus:ring-cyber-green"
                 />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-300">
-                  Remember me
-                </label>
-              </div>
-              
-              <div className="text-sm">
-                <a href="#" className="font-medium text-cyber-green hover:text-opacity-90">
-                  Forgot password?
-                </a>
               </div>
             </div>
-            
             <button
               type="submit"
               disabled={loading}

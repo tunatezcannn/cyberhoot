@@ -19,10 +19,12 @@ export type LoginResponse = {
 
 // Cookie configuration
 const COOKIE_NAME = "auth_token";
+const USERNAME_COOKIE = "username";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 // Set fallback token directly for immediate use if server is unavailable
-let authToken: string | null = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJzdWIiOiJ0ZXN0IiwiaWF0IjoxNzQ1NjYyNDA1LCJleHAiOjE3NDU5MjE2MDV9.Eklyru7uXcFXJWXN9ataXjYsJabHScedF1eOFj_RE1c";
+let authToken: string | null = null;
+let currentUsername: string | null = null;
 
 /**
  * Login to the server and get authentication token
@@ -50,6 +52,10 @@ export async function login(credentials: LoginRequest, apiBaseUrl: string): Prom
     
     // Store the token in a cookie
     setCookie(COOKIE_NAME, data.token, COOKIE_MAX_AGE);
+    
+    // Store the username in a cookie
+    currentUsername = credentials.username;
+    setCookie(USERNAME_COOKIE, credentials.username, COOKIE_MAX_AGE);
     
     return data;
   } catch (error) {
@@ -105,20 +111,29 @@ export function setAuthToken(token: string): void {
 }
 
 /**
+ * Get the current username
+ */
+export function getUsername(): string {
+  // Try to get username from cookie first
+  const cookieUsername = getCookie(USERNAME_COOKIE);
+  if (cookieUsername) {
+    currentUsername = cookieUsername;
+  }
+  return currentUsername || "User";
+}
+
+/**
  * Clear the authentication token (for logout)
  */
 export function clearAuthToken(): void {
-  // Reset to fallback token instead of null to ensure API calls still work
-  authToken = FALLBACK_TOKEN;
   deleteCookie(COOKIE_NAME);
+  deleteCookie(USERNAME_COOKIE);
 }
 
 /**
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {
-  // Just check the in-memory token since we've already handled
-  // syncing with cookies in getAuthToken
   return authToken !== null;
 }
 
@@ -173,6 +188,3 @@ function deleteCookie(name: string): void {
   }
   // For server-side, the cookie will be deleted via the response headers
 }
-
-// Static token for fallback (in case API login fails)
-export const FALLBACK_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJzdWIiOiJ0ZXN0IiwiaWF0IjoxNzQ1NjYyNDA1LCJleHAiOjE3NDU5MjE2MDV9.Eklyru7uXcFXJWXN9ataXjYsJabHScedF1eOFj_RE1c"; 

@@ -43,7 +43,7 @@ export type QuestionRequest = z.infer<typeof QuestionRequestSchema>;
  */
 function getAuthHeaders(): HeadersInit {
   // Get the token or use fallback if not available
-  const token = getAuthToken() || FALLBACK_TOKEN;
+  const token = getAuthToken();
   
   return {
     "Content-Type": "application/json",

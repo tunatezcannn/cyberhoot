@@ -42,17 +42,6 @@ export default function Index() {
             
             <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
               <Link 
-                to="/quiz-setup" 
-                className="w-full rounded-md bg-cyber-green px-6 py-3 text-base font-medium text-cyber-dark transition-colors hover:bg-opacity-90 sm:w-auto"
-              >
-                <span className="flex items-center justify-center">
-                  Take Quiz
-                  <svg className="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </span>
-              </Link>
-              <Link 
                 to="/login" 
                 className="w-full rounded-md border border-cyber-green bg-transparent px-6 py-3 text-base font-medium text-cyber-green transition-colors hover:bg-cyber-green hover:text-cyber-dark sm:w-auto"
               >
@@ -105,16 +94,7 @@ export default function Index() {
             <p className="text-gray-400">Receive immediate insights and explanations to help deepen your understanding.</p>
           </div>
         </div>
-        
-        {/* Call to action */}
-        <div className="mt-16 mb-20">
-          <Link
-            to="/quiz-setup"
-            className="cyber-border px-8 py-4 bg-cyber-dark text-white font-medium hover:border-cyber-green hover:text-cyber-green transition-all duration-300"
-          >
-            Start a Quiz Now
-          </Link>
-        </div>
+      
       </main>
 
       {/* Footer */}
@@ -122,7 +102,7 @@ export default function Index() {
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex flex-col items-center justify-between md:flex-row">
             <div className="mb-4 flex items-center md:mb-0">
-              <span className="text-sm text-gray-400">© 2023 CyberHoot. All rights reserved.</span>
+              <span className="text-sm text-gray-400">© 2025 CyberHoot. All rights reserved.</span>
             </div>
             <div className="flex items-center space-x-1 text-xs text-gray-500">
               <svg className="h-3 w-3 animate-pulse-slow text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">

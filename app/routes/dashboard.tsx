@@ -1,8 +1,8 @@
 import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { Link, useLoaderData } from "@remix-run/react";
-import { useState } from "react";
-import { isAuthenticated, getAuthToken } from "~/services/authService";
+import { Link, useLoaderData, useNavigate } from "@remix-run/react";
+import { useState, useEffect } from "react";
+import { isAuthenticated, getAuthToken, getUsername } from "~/services/authService";
 
 // Sample types for dashboard data
 type QuizOverview = {
@@ -23,37 +23,15 @@ type AnalyticsData = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  // Check if user is authenticated
+  if (!isAuthenticated()) {
+    return redirect("/login");
+  }
+
   // For server-side rendering, we should check for an auth cookie in the request headers
   // but since we don't have proper cookie parsing set up, we'll use the fallback approach
   // Check if user is authenticated - for now we're assuming the fallback token is valid
   // In a real app, you would validate the token from cookies or session
-  
-  // Get API base URL from environment variables, with fallback
-  const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
-  let apiAvailable = false;
-  
-  try {
-    // Check if the API is available
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
-    
-    try {
-      // Perform a lightweight check to see if the server is up
-      await fetch(`${BASE_URL}/health`, { 
-        method: 'GET',
-        signal: controller.signal 
-      });
-      apiAvailable = true;
-    } catch (e) {
-      // Server is not responding, we'll use mock data
-      console.log("API server not available for dashboard, using mock data");
-      apiAvailable = false;
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  } catch (error) {
-    console.error("Error checking API availability:", error);
-  }
   
   // In a real app, you would fetch this data from your API
   // Sample data for demonstration
@@ -102,9 +80,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     upcomingQuizzes,
-    analytics,
-    apiAvailable,
-    BASE_URL
+    analytics
   });
 };
 
@@ -118,6 +94,13 @@ export const meta: MetaFunction = () => {
 export default function Dashboard() {
   const { upcomingQuizzes, analytics } = useLoaderData<typeof loader>();
   const [activeTab, setActiveTab] = useState<"quizzes" | "analytics">("quizzes");
+  const navigate = useNavigate();
+  const [username, setUsername] = useState<string>("User");
+
+  useEffect(() => {
+    // Get username from cookie
+    setUsername(getUsername());
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-cyber-dark">
@@ -133,7 +116,7 @@ export default function Dashboard() {
               <svg className="h-5 w-5 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="text-sm font-medium text-white">John Doe</span>
+              <span className="text-sm font-medium text-white">{username}</span>
             </div>
             <Link to="/logout" className="rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:text-cyber-green">
               Logout
@@ -149,7 +132,7 @@ export default function Dashboard() {
             {/* Welcome card */}
             <div className="col-span-1 rounded-xl bg-cyber-navy p-6 shadow-cyber md:col-span-2">
               <h2 className="mb-2 text-xl font-bold text-white">
-                Welcome back, <span className="text-cyber-green">John</span>
+                Welcome back, <span className="text-cyber-green">{username}</span>
               </h2>
               <p className="mb-4 text-gray-400">
                 Your current streak is <span className="font-bold text-cyber-green">{analytics.streakDays} days</span>. 
@@ -157,8 +140,8 @@ export default function Dashboard() {
               </p>
               <div className="mt-4 flex space-x-2">
                 <button
-                  onClick={() => setActiveTab("quizzes")}
                   className="rounded-md bg-cyber-green px-4 py-2 text-sm font-bold text-cyber-dark transition-all hover:bg-opacity-90"
+                  onClick={() => navigate("/quiz-setup")}
                 >
                   Start Quiz
                 </button>
