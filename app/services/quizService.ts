@@ -9,6 +9,7 @@ export type QuizQuestion = {
   type: "multiple-choice" | "open-ended";
   options?: string[];
   correctAnswer?: string;
+  answer?: string;
   difficulty: "easy" | "medium" | "hard";
 };
 
@@ -181,12 +182,28 @@ function difficultyToNumber(difficulty: "easy" | "medium" | "hard" | "all"): num
  * Convert API McqQuestion to our QuizQuestion format
  */
 function convertMcqQuestion(question: McqQuestion, difficultyLevel: "easy" | "medium" | "hard"): QuizQuestion {
+  // Process the answer if it's a single letter (A, B, C, D)
+  let correctAnswer = question.correctAnswer;
+  
+  // If the correctAnswer is not defined but we have answer field
+  if (!correctAnswer && question.answer) {
+    // If the answer is a single letter like "A", "B", etc.
+    if (question.answer.length === 1 && /^[A-D]$/.test(question.answer)) {
+      const index = question.answer.charCodeAt(0) - 'A'.charCodeAt(0);
+      if (question.options && index >= 0 && index < question.options.length) {
+        correctAnswer = question.options[index];
+      }
+    } else {
+      correctAnswer = question.answer;
+    }
+  }
+  
   return {
-    id: parseInt(question.id) || Math.floor(Math.random() * 1000),
+    id: question.id ? parseInt(question.id.toString()) : Math.floor(Math.random() * 1000),
     text: question.text,
     type: "multiple-choice",
     options: question.options,
-    correctAnswer: question.correctAnswer,
+    correctAnswer: correctAnswer,
     difficulty: difficultyLevel
   };
 }
@@ -196,7 +213,7 @@ function convertMcqQuestion(question: McqQuestion, difficultyLevel: "easy" | "me
  */
 function convertOpenQuestion(question: OpenQuestion, difficultyLevel: "easy" | "medium" | "hard"): QuizQuestion {
   return {
-    id: parseInt(question.id) || Math.floor(Math.random() * 1000),
+    id: question.id ? parseInt(question.id.toString()) : Math.floor(Math.random() * 1000),
     text: question.text,
     type: "open-ended",
     difficulty: difficultyLevel

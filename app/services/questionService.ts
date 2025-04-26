@@ -7,17 +7,18 @@ const USE_MOCK_DATA = false;
 
 // Question response type definitions
 export type McqQuestion = {
-  id: string;
+  id: string | number;
   type: "mcq";
   language: string;
   topic: string;
   text: string;
   options: string[];
-  correctAnswer: string;
+  correctAnswer?: string;
+  answer?: string;
 };
 
 export type OpenQuestion = {
-  id: string;
+  id: string | number;
   type: "open";
   language: string;
   topic: string;
@@ -74,7 +75,7 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
     
     // Create an AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // Increase timeout to 8 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 18000); // Increase timeout to 8 seconds
     
     try {
       // Use proxy URL instead of direct server URL

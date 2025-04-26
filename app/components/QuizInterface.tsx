@@ -6,6 +6,7 @@ type QuestionType = {
   type: "multiple-choice" | "open-ended";
   options?: string[];
   correctAnswer?: string | string[];
+  answer?: string;
   difficulty: "easy" | "medium" | "hard";
 };
 
@@ -80,15 +81,19 @@ const QuizInterface = ({
   };
 
   const checkAnswer = (selectedOption: string) => {
-    if (currentQuestion.type === "multiple-choice" && currentQuestion.correctAnswer) {
-      const isAnswerCorrect = selectedOption === currentQuestion.correctAnswer;
-      setIsCorrect(isAnswerCorrect);
-      
-      if (isAnswerCorrect) {
-        setScore(prev => prev + calculatePoints());
-        setStreak(prev => prev + 1);
-      } else {
-        setStreak(0);
+    if (currentQuestion.type === "multiple-choice") {
+      // Check if the answer is correct by looking at either correctAnswer or answer field
+      const correctValue = currentQuestion.correctAnswer || currentQuestion.answer;
+      if (correctValue) {
+        const isAnswerCorrect = selectedOption === correctValue;
+        setIsCorrect(isAnswerCorrect);
+        
+        if (isAnswerCorrect) {
+          setScore(prev => prev + calculatePoints());
+          setStreak(prev => prev + 1);
+        } else {
+          setStreak(0);
+        }
       }
     }
   };

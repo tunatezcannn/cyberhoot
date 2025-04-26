@@ -4,7 +4,6 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import QuizInterface from "~/components/QuizInterface";
 import QuizResults from "~/components/QuizResults";
-import DifficultySettings from "~/components/DifficultySettings";
 import { fetchQuizQuestions, USE_API, FALLBACK_QUESTIONS } from "~/services/quizService";
 import { initializeAuth } from "~/services/authService";
 import type { QuizQuestion } from "~/services/quizService";
@@ -32,6 +31,11 @@ export default function Quiz() {
   const isMultiplayer = multiplayerParam === "true";
   const countParam = searchParams.get("count");
   const questionCount = countParam ? parseInt(countParam) : 5;
+  const difficultyParam = searchParams.get("difficulty");
+  const difficulty = (difficultyParam === "easy" || difficultyParam === "medium" || 
+                     difficultyParam === "hard" || difficultyParam === "all") 
+                     ? difficultyParam as "easy" | "medium" | "hard" | "all" 
+                     : "all";
   
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -41,7 +45,6 @@ export default function Quiz() {
   const [gameCode, setGameCode] = useState<string>("");
   const [waitingForPlayers, setWaitingForPlayers] = useState(false);
   const [playersJoined, setPlayersJoined] = useState(0);
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "all">("all");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authInitialized, setAuthInitialized] = useState(false);
@@ -55,15 +58,28 @@ export default function Quiz() {
         }
         await initializeAuth(BASE_URL);
         setAuthInitialized(true);
+        
+        // Once authenticated, automatically load questions
+        loadQuestions();
       } catch (error) {
         console.error("Failed to initialize authentication:", error);
         setError("Failed to authenticate. Using fallback authentication if available.");
         setAuthInitialized(true); // Still continue with fallback
+        
+        // Try to load questions with fallback
+        loadQuestions();
       }
     }
     
     init();
   }, [BASE_URL]);
+
+  // Auto-start the quiz when questions are loaded
+  useEffect(() => {
+    if (questions.length > 0 && !quizStarted && !error) {
+      setQuizStarted(true);
+    }
+  }, [questions, quizStarted, error]);
 
   // Generate a random game code
   useEffect(() => {
@@ -189,10 +205,6 @@ export default function Quiz() {
     navigate("/quiz-setup");
   };
 
-  const handleDifficultyChange = (newDifficulty: "easy" | "medium" | "hard" | "all") => {
-    setDifficulty(newDifficulty);
-  };
-
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-cyber-dark p-4">
       <div className="relative w-full max-w-xl overflow-hidden rounded-xl bg-cyber-navy p-8 shadow-cyber">
@@ -280,83 +292,71 @@ export default function Quiz() {
                       {questionType === "multiple-choice" ? "Multiple Choice" : "Open Ended"}
                     </span>
                   </div>
+                  <div className="h-10 w-[1px] bg-cyber-border"></div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold uppercase text-gray-500">Difficulty</span>
+                    <span className="text-lg font-medium text-white capitalize">
+                      {difficulty}
+                    </span>
+                  </div>
                 </div>
-                
-                {/* Difficulty Settings for Single Player only */}
-                {!isMultiplayer && (
-                  <DifficultySettings 
-                    selectedDifficulty={difficulty}
-                    onDifficultyChange={handleDifficultyChange}
-                  />
-                )}
                 
                 <div className="mb-8 rounded-lg border border-dashed border-cyber-border bg-cyber-dark/50 p-6 text-center">
                   <div className="mb-4 flex justify-center">
-                    <svg className="h-12 w-12 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
+                    {isLoading ? (
+                      <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyber-green"></div>
+                    ) : (
+                      <svg className="h-12 w-12 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    )}
                   </div>
-                  <h2 className="mb-2 text-xl font-bold text-white">Ready to Start Your Quiz?</h2>
+                  <h2 className="mb-2 text-xl font-bold text-white">
+                    {isLoading ? "Loading Your Quiz..." : "Ready to Start Your Quiz"}
+                  </h2>
                   <p className="mb-6 text-gray-400">
-                    You'll have 20 seconds per question. The quiz will contain {questionCount} questions on {topic}.
-                    {difficulty !== "all" && ` Difficulty level: ${difficulty}.`}
+                    {isLoading ? (
+                      "Please wait while we prepare your questions..."
+                    ) : (
+                      <>
+                        You'll have 20 seconds per question. The quiz will contain {questionCount} questions on {topic}.
+                        {difficulty !== "all" && ` Difficulty level: ${difficulty}.`}
+                      </>
+                    )}
                   </p>
                   
-                  <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button 
-                      onClick={handleStartQuiz}
-                      className="group relative overflow-hidden rounded-md bg-cyber-green px-6 py-3 text-sm font-bold text-cyber-dark transition-all duration-300 hover:bg-opacity-90"
-                      disabled={isLoading}
-                    >
-                      <span className="relative z-10 flex items-center justify-center">
-                        {isLoading ? "Loading..." : "Single Player"}
-                        {!isLoading && (
+                  {!isLoading && (
+                    <div className="flex justify-center">
+                      <button 
+                        onClick={isMultiplayer ? handleStartWaiting : handleStartQuiz}
+                        className="group relative overflow-hidden rounded-md bg-cyber-green px-6 py-3 text-sm font-bold text-cyber-dark transition-all duration-300 hover:bg-opacity-90"
+                      >
+                        <span className="relative z-10 flex items-center justify-center">
+                          {isMultiplayer ? "Start Multiplayer" : "Start Quiz Now"}
                           <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                           </svg>
-                        )}
-                      </span>
-                    </button>
-                    
-                    <button 
-                      onClick={handleStartWaiting}
-                      className="group relative overflow-hidden rounded-md border border-cyber-green bg-transparent px-6 py-3 text-sm font-bold text-cyber-green transition-all duration-300 hover:bg-cyber-green/10"
-                      disabled={isLoading}
-                    >
-                      <span className="relative z-10 flex items-center justify-center">
-                        {isLoading ? "Loading..." : "Multiplayer"}
-                        {!isLoading && (
-                          <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                          </svg>
-                        )}
-                      </span>
-                    </button>
-                  </div>
+                        </span>
+                      </button>
+                    </div>
+                  )}
                   
                   {error && (
                     <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-md">
                       <p className="text-red-400 text-sm">{error}</p>
                     </div>
                   )}
-                  
-                  <div className="flex items-center justify-center space-x-1 text-xs text-gray-500">
-                    <svg className="h-3 w-3 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Each session is timed with immediate feedback</span>
-                  </div>
                 </div>
                 
                 <div className="flex justify-center">
                   <Link 
-                    to="/"
+                    to="/quiz-setup"
                     className="cyber-border flex items-center bg-cyber-dark px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:border-cyber-green hover:text-cyber-green"
                   >
                     <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    Back to Dashboard
+                    Back to Setup
                   </Link>
                 </div>
               </>

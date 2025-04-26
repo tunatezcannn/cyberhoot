@@ -15,6 +15,7 @@ export default function QuizSetup() {
   const [questionType, setQuestionType] = useState("multiple-choice");
   const [multiplayer, setMultiplayer] = useState(false);
   const [questionCount, setQuestionCount] = useState(5);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "all">("all");
   
   const handleStartQuiz = () => {
     const queryParams = new URLSearchParams();
@@ -22,6 +23,7 @@ export default function QuizSetup() {
     queryParams.set("type", questionType);
     queryParams.set("multiplayer", multiplayer.toString());
     queryParams.set("count", questionCount.toString());
+    queryParams.set("difficulty", difficulty);
     
     navigate(`/quiz?${queryParams.toString()}`);
   };
@@ -84,6 +86,53 @@ export default function QuizSetup() {
                   }`}
                 >
                   Open Ended
+                </button>
+              </div>
+            </div>
+            
+            {/* Difficulty Selection */}
+            <div className="cyber-border mb-4 p-4 bg-cyber-dark">
+              <h3 className="text-lg font-medium text-white mb-3">Difficulty Level</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button
+                  onClick={() => setDifficulty("easy")}
+                  className={`p-3 rounded-md ${
+                    difficulty === "easy" 
+                    ? "bg-cyber-green text-cyber-dark" 
+                    : "bg-cyber-navy border border-cyber-border text-white hover:border-cyber-green"
+                  }`}
+                >
+                  Easy
+                </button>
+                <button
+                  onClick={() => setDifficulty("medium")}
+                  className={`p-3 rounded-md ${
+                    difficulty === "medium" 
+                    ? "bg-cyber-green text-cyber-dark" 
+                    : "bg-cyber-navy border border-cyber-border text-white hover:border-cyber-green"
+                  }`}
+                >
+                  Medium
+                </button>
+                <button
+                  onClick={() => setDifficulty("hard")}
+                  className={`p-3 rounded-md ${
+                    difficulty === "hard" 
+                    ? "bg-cyber-green text-cyber-dark" 
+                    : "bg-cyber-navy border border-cyber-border text-white hover:border-cyber-green"
+                  }`}
+                >
+                  Hard
+                </button>
+                <button
+                  onClick={() => setDifficulty("all")}
+                  className={`p-3 rounded-md ${
+                    difficulty === "all" 
+                    ? "bg-cyber-green text-cyber-dark" 
+                    : "bg-cyber-navy border border-cyber-border text-white hover:border-cyber-green"
+                  }`}
+                >
+                  All Levels
                 </button>
               </div>
             </div>
