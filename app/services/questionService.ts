@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { getAuthToken, FALLBACK_TOKEN } from "./authService";
-import { useLoaderData } from "@remix-run/react";
+import { getAuthToken} from "./authService";
 
 // Skip API calls to avoid connection errors
 const USE_MOCK_DATA = false;

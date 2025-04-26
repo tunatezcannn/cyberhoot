@@ -71,12 +71,19 @@ export default function Login() {
       if (!response.ok) {
         throw new Error(`Login failed: ${response.status} ${response.statusText}`);
       }
+      
+      const data = await response.json();
             
-      // Store token in cookie (this is already handled in authService.login)
-      login({
+      // Store token in cookie using authService.login
+      await login({
         username: formData.username,
         password: formData.password
       }, apiBaseUrl);
+      
+      // Ensure the token is properly set
+      if (data.token) {
+        setAuthToken(data.token);
+      }
       
       // Navigate to dashboard or home page after login
       navigate("/dashboard");

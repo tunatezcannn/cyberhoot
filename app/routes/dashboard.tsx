@@ -2,7 +2,7 @@ import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
 import { Link, useLoaderData, useNavigate } from "@remix-run/react";
 import { useState, useEffect } from "react";
-import { isAuthenticated, getAuthToken, getUsername } from "~/services/authService";
+import { isAuthenticated, getAuthToken, getUsername, clearAuthToken } from "~/services/authService";
 
 // Sample types for dashboard data
 type QuizOverview = {
@@ -23,8 +23,12 @@ type AnalyticsData = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  // Check if user is authenticated
-  if (!isAuthenticated()) {
+  // Check for authentication cookie in the request headers
+  const cookieHeader = request.headers.get("Cookie");
+  const hasAuthCookie = cookieHeader && cookieHeader.includes("auth_token=");
+  
+  // Check if user is authenticated either via cookie or in-memory token
+  if (!hasAuthCookie && !isAuthenticated()) {
     return redirect("/login");
   }
 
@@ -101,6 +105,12 @@ export default function Dashboard() {
     // Get username from cookie
     setUsername(getUsername());
   }, []);
+  
+  // Handle client-side logout
+  const handleLogout = () => {
+    clearAuthToken();
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-cyber-dark">
@@ -118,9 +128,12 @@ export default function Dashboard() {
               </svg>
               <span className="text-sm font-medium text-white">{username}</span>
             </div>
-            <Link to="/logout" className="rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:text-cyber-green">
+            <button 
+              onClick={handleLogout}
+              className="rounded-md px-4 py-2 text-sm font-medium text-gray-400 hover:text-cyber-green"
+            >
               Logout
-            </Link>
+            </button>
           </nav>
         </div>
       </header>

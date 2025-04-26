@@ -126,6 +126,11 @@ export function getUsername(): string {
  * Clear the authentication token (for logout)
  */
 export function clearAuthToken(): void {
+  // Clear in-memory state
+  authToken = null;
+  currentUsername = null;
+  
+  // Delete cookies
   deleteCookie(COOKIE_NAME);
   deleteCookie(USERNAME_COOKIE);
 }
@@ -134,6 +139,16 @@ export function clearAuthToken(): void {
  * Check if user is authenticated
  */
 export function isAuthenticated(): boolean {
+  // First try to get token from cookie
+  const cookieToken = getCookie(COOKIE_NAME);
+  
+  // If we have a cookie token, update our in-memory token
+  if (cookieToken) {
+    authToken = cookieToken;
+    return true;
+  }
+  
+  // Fall back to in-memory token
   return authToken !== null;
 }
 
@@ -175,7 +190,7 @@ function getCookie(name: string): string | null {
   for (let cookie of cookies) {
     const [cookieName, cookieValue] = cookie.trim().split('=');
     if (cookieName === name) {
-      return cookieValue;
+      return decodeURIComponent(cookieValue);
     }
   }
   return null;
