@@ -1,5 +1,23 @@
-import type { MetaFunction } from "@remix-run/react";
-import { Link } from "@remix-run/react";
+import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { Link, useNavigate, useLoaderData, useLocation } from "@remix-run/react";
+import { useState } from "react";
+import { json } from "@remix-run/node";
+import { login } from "~/services/authService";
+
+// Add Window interface extension for ENV property
+declare global {
+  interface Window {
+    ENV?: {
+      API_URL?: string;
+    };
+  }
+}
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return json({
+    BASE_URL: process.env.BASE_URL
+  });
+};
 
 export const meta: MetaFunction = () => {
   return [
@@ -9,6 +27,65 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { BASE_URL } = useLoaderData<typeof loader>();
+  const [formData, setFormData] = useState({
+    username: "",
+    password: ""
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const message = location.state?.message;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    try {
+      setLoading(true);
+      
+      const apiBaseUrl = BASE_URL || "http://localhost:3001";
+      
+      const response = await fetch(`${apiBaseUrl}/ws/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        }),
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Login failed: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      // Store token in cookie (this is already handled in authService.login)
+      login({
+        username: formData.username,
+        password: formData.password
+      }, apiBaseUrl);
+      
+      // Navigate to dashboard or home page after login
+      navigate("/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err instanceof Error ? err.message : "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-cyber-dark">
       <div className="relative w-full max-w-md overflow-hidden rounded-xl bg-cyber-navy p-8 shadow-cyber">
@@ -25,21 +102,35 @@ export default function Login() {
           </div>
           <p className="mb-6 text-center text-sm text-gray-400">Log in to access your account</p>
           
-          <form className="space-y-6">
+          {message && (
+            <div className="mb-4 rounded-md bg-cyber-green bg-opacity-20 p-3 text-sm text-cyber-green">
+              <p>{message}</p>
+            </div>
+          )}
+          
+          {error && (
+            <div className="mb-4 rounded-md bg-red-500 bg-opacity-20 p-3 text-sm text-red-300">
+              <p>{error}</p>
+            </div>
+          )}
+          
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
-                Email
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+                Username
               </label>
               <div className="relative">
                 <input
-                  type="email"
-                  id="email"
+                  type="text"
+                  id="username"
+                  value={formData.username}
+                  onChange={handleChange}
                   className="w-full rounded-md border border-cyber-border bg-cyber-dark px-3 py-2 text-white placeholder:text-gray-500 focus:border-cyber-green focus:outline-none focus:ring-1 focus:ring-cyber-green"
-                  placeholder="your.email@example.com"
+                  placeholder="johndoe"
                   required
                 />
                 <svg className="absolute right-3 top-2.5 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
             </div>
@@ -52,6 +143,8 @@ export default function Login() {
                 <input
                   type="password"
                   id="password"
+                  value={formData.password}
+                  onChange={handleChange}
                   className="w-full rounded-md border border-cyber-border bg-cyber-dark px-3 py-2 text-white placeholder:text-gray-500 focus:border-cyber-green focus:outline-none focus:ring-1 focus:ring-cyber-green"
                   placeholder="••••••••"
                   required
@@ -84,13 +177,16 @@ export default function Login() {
             
             <button
               type="submit"
-              className="group relative w-full overflow-hidden rounded-md bg-cyber-green px-4 py-3 text-sm font-bold text-cyber-dark transition-all duration-300 hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-cyber-green focus:ring-offset-2 focus:ring-offset-cyber-navy"
+              disabled={loading}
+              className="group relative w-full overflow-hidden rounded-md bg-cyber-green px-4 py-3 text-sm font-bold text-cyber-dark transition-all duration-300 hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-cyber-green focus:ring-offset-2 focus:ring-offset-cyber-navy disabled:opacity-70"
             >
               <span className="relative z-10 flex items-center justify-center">
-                LOG IN
-                <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
+                {loading ? 'LOGGING IN...' : 'LOG IN'}
+                {!loading && (
+                  <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                )}
               </span>
             </button>
           </form>
