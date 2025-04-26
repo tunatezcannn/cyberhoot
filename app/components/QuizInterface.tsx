@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getUsername, getAuthToken } from "~/services/authService";
+import { submitAnswer } from "../services/questionService";
 
 type QuestionType = {
   id: number;
@@ -156,27 +157,19 @@ const QuizInterface = ({
       const answerIndex = currentQuestion.options?.findIndex(opt => opt === userAnswer) ?? 0;
       const answerLetter = ["A", "B", "C", "D"][answerIndex];
       const username = getUsername();
-      const token = getAuthToken();
       
       console.log(`Submitting answer: Question ID ${currentQuestion.id}, User ${username}, Answer ${answerLetter}`);
       
-      const payload = {
-        questionId: currentQuestion.id,
+      // Use the submitAnswer function from questionService
+      const success = await submitAnswer(
+        currentQuestion.id,
         username,
-        userAnswer: answerLetter
-      };
+        answerLetter,
+        baseUrl
+      );
       
-      const response = await fetch(`${baseUrl}/ws/questions/submitAnswer`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!response.ok) {
-        console.error(`Failed to submit answer: ${response.status} ${response.statusText}`);
+      if (!success) {
+        console.error("Failed to submit answer");
       } else {
         console.log("Answer submitted successfully");
       }
@@ -198,6 +191,38 @@ const QuizInterface = ({
     // For open-ended, we don't show correct/incorrect feedback
     // just acknowledge submission
     setFeedbackVisible(true);
+    
+    // Submit the open-ended answer to the server
+    submitOpenAnswerToServer(textAnswer);
+  };
+
+  const submitOpenAnswerToServer = async (userAnswer: string) => {
+    if (!baseUrl) {
+      console.warn("BASE_URL is not defined, cannot submit answer to server");
+      return;
+    }
+    
+    try {
+      const username = getUsername();
+      
+      console.log(`Submitting open answer: Question ID ${currentQuestion.id}, User ${username}`);
+      
+      // Use the submitAnswer function from questionService
+      const success = await submitAnswer(
+        currentQuestion.id,
+        username,
+        userAnswer,
+        baseUrl
+      );
+      
+      if (!success) {
+        console.error("Failed to submit open-ended answer");
+      } else {
+        console.log("Open-ended answer submitted successfully");
+      }
+    } catch (error) {
+      console.error("Error submitting open-ended answer:", error);
+    }
   };
 
   const handleNextQuestion = () => {

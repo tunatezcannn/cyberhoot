@@ -89,7 +89,7 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
         body: JSON.stringify(validatedParams),
         signal: controller.signal
       });
-      
+      console.log("Response:", response);
       // Clear the timeout
       clearTimeout(timeoutId);
       
@@ -99,7 +99,7 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
       
       // Parse the response
       const data = await response.json();
-      
+      console.log("Data:", data);
       // Handle array or single question response
       const questionsArray = Array.isArray(data) ? data : [data];
       
@@ -203,4 +203,68 @@ export async function getOpenQuestions(
     count,
     username: getUsername(),
   }, baseUrl) as Promise<OpenQuestion[]>;
+}
+
+/**
+ * Submit an answer to the remote server
+ */
+export async function submitAnswer(
+  questionId: string | number,
+  username: string,
+  userAnswer: string,
+  baseUrl: string
+): Promise<boolean> {
+  // Skip API calls entirely if mock data is enabled
+  if (USE_MOCK_DATA) {
+    console.log("Using mock mode - answer submission simulated");
+    return true;
+  }
+  
+  try {
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    
+    try {
+      // Use proxy URL instead of direct server URL - same pattern as getQuestions
+      const url = `/api/ws/questions/submitAnswer`;
+      
+      const payload = {
+        questionId,
+        username,
+        userAnswer
+      };
+      
+      // Make API call to the backend via the proxy
+      const response = await fetch(url, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Error submitting answer: ${response.status} ${response.statusText}`);
+      }
+      
+      console.log("Answer submitted successfully");
+      return true;
+    } catch (fetchError: any) {
+      // Clear the timeout to prevent memory leaks
+      clearTimeout(timeoutId);
+      
+      // Check if it was a timeout
+      if (fetchError.name === 'AbortError') {
+        throw new Error("API request timed out");
+      }
+      
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error("Failed to submit answer:", error);
+    return false;
+  }
 } 
