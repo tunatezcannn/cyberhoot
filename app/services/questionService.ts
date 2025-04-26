@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAuthToken} from "./authService";
+import { getAuthToken, getUsername } from "./authService";
 
 // Skip API calls to avoid connection errors
 const USE_MOCK_DATA = false;
@@ -33,6 +33,7 @@ const QuestionRequestSchema = z.object({
   language: z.string().default("English"),
   topic: z.string().default("cybersecurity"),
   count: z.number().min(1).max(20).default(5),
+  username: z.string().optional(),
 });
 
 export type QuestionRequest = z.infer<typeof QuestionRequestSchema>;
@@ -180,6 +181,7 @@ export async function getMcqQuestions(
     language,
     topic,
     count,
+    username: getUsername(),
   }, baseUrl) as Promise<McqQuestion[]>;
 }
 
@@ -199,5 +201,6 @@ export async function getOpenQuestions(
     language,
     topic,
     count,
+    username: getUsername(),
   }, baseUrl) as Promise<OpenQuestion[]>;
 } 

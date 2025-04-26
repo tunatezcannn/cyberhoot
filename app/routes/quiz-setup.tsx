@@ -15,7 +15,7 @@ export default function QuizSetup() {
   const [questionType, setQuestionType] = useState("multiple-choice");
   const [multiplayer, setMultiplayer] = useState(false);
   const [questionCount, setQuestionCount] = useState(5);
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "all">("all");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   
   const handleStartQuiz = () => {
     const queryParams = new URLSearchParams();
@@ -91,7 +91,7 @@ export default function QuizSetup() {
             {/* Difficulty Selection */}
             <div className="cyber-border mb-4 p-4 bg-cyber-dark">
               <h3 className="text-lg font-medium text-white mb-3">Difficulty Level</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <button
                   onClick={() => setDifficulty("easy")}
                   className={`p-3 rounded-md ${
@@ -121,16 +121,6 @@ export default function QuizSetup() {
                   }`}
                 >
                   Hard
-                </button>
-                <button
-                  onClick={() => setDifficulty("all")}
-                  className={`p-3 rounded-md ${
-                    difficulty === "all" 
-                    ? "bg-cyber-green text-cyber-dark" 
-                    : "bg-cyber-navy border border-cyber-border text-white hover:border-cyber-green"
-                  }`}
-                >
-                  All Levels
                 </button>
               </div>
             </div>

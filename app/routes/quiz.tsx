@@ -58,13 +58,13 @@ export default function Quiz() {
         }
         await initializeAuth(BASE_URL);
         setAuthInitialized(true);
-        
+        console.log("Authentication initialized");
         // Once authenticated, automatically load questions
         loadQuestions();
       } catch (error) {
         console.error("Failed to initialize authentication:", error);
         setError("Failed to authenticate. Using fallback authentication if available.");
-        setAuthInitialized(true); // Still continue with fallback
+        setAuthInitialized(false); // Still continue with fallback
         
         // Try to load questions with fallback
         loadQuestions();
@@ -139,7 +139,7 @@ export default function Quiz() {
   };
 
   const loadQuestions = async () => {
-    if (!authInitialized) {
+    if (authInitialized) {
       setError("Authentication not initialized. Please wait or refresh the page.");
       return;
     }

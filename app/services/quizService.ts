@@ -1,4 +1,5 @@
 import { getMcqQuestions, getOpenQuestions, McqQuestion, OpenQuestion } from "./questionService";
+import { getUsername } from "./authService";
 
 // Enable or disable API calls - set to false to use only fallback questions
 export const USE_API = true;
@@ -11,6 +12,7 @@ export type QuizQuestion = {
   correctAnswer?: string;
   answer?: string;
   difficulty: "easy" | "medium" | "hard";
+  username?: string;
 };
 
 // Static fallback questions in case the API is unreachable
@@ -271,11 +273,14 @@ export async function fetchQuizQuestions(
 ): Promise<QuizQuestion[]> {
   const questions: QuizQuestion[] = [];
   const numericDifficulty = difficultyToNumber(difficulty);
+  const username = getUsername();
   
   // If no baseUrl is provided, use fallback questions
   if (!baseUrl) {
     console.warn("No baseUrl provided, using fallback questions");
-    return getFallbackQuestions(difficulty, questionType).slice(0, count);
+    const fallbackQuestions = getFallbackQuestions(difficulty, questionType).slice(0, count);
+    // Add username to fallback questions
+    return fallbackQuestions.map(q => ({ ...q, username }));
   }
   
   try {
@@ -284,13 +289,15 @@ export async function fetchQuizQuestions(
       const mcqQuestions = await getMcqQuestions(topic, numericDifficulty, "English", baseUrl, count);
       // Convert each returned question to our format
       mcqQuestions.forEach(question => {
-        questions.push(convertMcqQuestion(question, difficulty === "all" ? "medium" : difficulty));
+        const convertedQuestion = convertMcqQuestion(question, difficulty === "all" ? "medium" : difficulty);
+        questions.push({ ...convertedQuestion, username });
       });
     } else if (questionType === "open-ended") {
       const openQuestions = await getOpenQuestions(topic, numericDifficulty, "English", baseUrl, count);
       // Convert each returned question to our format
       openQuestions.forEach(question => {
-        questions.push(convertOpenQuestion(question, difficulty === "all" ? "medium" : difficulty));
+        const convertedQuestion = convertOpenQuestion(question, difficulty === "all" ? "medium" : difficulty);
+        questions.push({ ...convertedQuestion, username });
       });
     }
   } catch (error) {
@@ -299,7 +306,9 @@ export async function fetchQuizQuestions(
   
   // If we couldn't fetch any questions, use fallbacks
   if (questions.length === 0) {
-    return getFallbackQuestions(difficulty, questionType).slice(0, count);
+    const fallbackQuestions = getFallbackQuestions(difficulty, questionType).slice(0, count);
+    // Add username to fallback questions
+    return fallbackQuestions.map(q => ({ ...q, username }));
   }
   
   return questions.slice(0, count); // Ensure we return only the requested count
