@@ -32,6 +32,7 @@ const QuestionRequestSchema = z.object({
   type: z.enum(["mcq", "open"]).default("mcq"),
   language: z.string().default("English"),
   topic: z.string().default("cybersecurity"),
+  count: z.number().min(1).max(20).default(5),
 });
 
 export type QuestionRequest = z.infer<typeof QuestionRequestSchema>;
@@ -52,13 +53,19 @@ function getAuthHeaders(): HeadersInit {
 /**
  * Fetches questions from the server based on provided parameters
  */
-export async function getQuestions(params: QuestionRequest, baseUrl: string): Promise<Question> {
+export async function getQuestions(params: QuestionRequest, baseUrl: string): Promise<Question[]> {
   // Skip API calls entirely if mock data is enabled
   if (USE_MOCK_DATA) {
     console.log("Using mock data instead of API call");
-    return params.type === "mcq" 
-      ? createMockMcqQuestion(params.topic) 
-      : createMockOpenQuestion(params.topic);
+    const mockQuestions = [];
+    for (let i = 0; i < params.count; i++) {
+      mockQuestions.push(
+        params.type === "mcq" 
+          ? createMockMcqQuestion(params.topic) 
+          : createMockOpenQuestion(params.topic)
+      );
+    }
+    return mockQuestions;
   }
   
   try {
@@ -67,7 +74,7 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
     
     // Create an AbortController for timeout
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduce timeout to 3 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // Increase timeout to 8 seconds
     
     try {
       // Use proxy URL instead of direct server URL
@@ -92,12 +99,11 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
       // Parse the response
       const data = await response.json();
       
-      // Type guard to ensure correct return type
-      if (data.type === "mcq" || data.type === "open") {
-        return data as Question;
-      } else {
-        throw new Error("Invalid question type in response");
-      }
+      // Handle array or single question response
+      const questionsArray = Array.isArray(data) ? data : [data];
+      
+      // Type guard to ensure correct return type for each question
+      return questionsArray.filter(q => q.type === "mcq" || q.type === "open") as Question[];
     } catch (fetchError: any) {
       // Clear the timeout to prevent memory leaks
       clearTimeout(timeoutId);
@@ -113,11 +119,15 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
     console.error("Failed to fetch questions:", error);
     
     // Create mock data based on requested type
-    if (params.type === "mcq") {
-      return createMockMcqQuestion(params.topic);
-    } else {
-      return createMockOpenQuestion(params.topic);
+    const mockQuestions = [];
+    for (let i = 0; i < params.count; i++) {
+      mockQuestions.push(
+        params.type === "mcq" 
+          ? createMockMcqQuestion(params.topic) 
+          : createMockOpenQuestion(params.topic)
+      );
     }
+    return mockQuestions;
   }
 }
 
@@ -157,23 +167,37 @@ function createMockOpenQuestion(topic: string): OpenQuestion {
 /**
  * Get multiple choice questions
  */
-export async function getMcqQuestions(topic: string, difficulty = 5, language = "English", baseUrl: string): Promise<McqQuestion> {
+export async function getMcqQuestions(
+  topic: string, 
+  difficulty = 5, 
+  language = "English", 
+  baseUrl: string,
+  count = 5
+): Promise<McqQuestion[]> {
   return getQuestions({
     difficulty,
     type: "mcq",
     language,
     topic,
-  }, baseUrl) as Promise<McqQuestion>;
+    count,
+  }, baseUrl) as Promise<McqQuestion[]>;
 }
 
 /**
  * Get open-ended questions
  */
-export async function getOpenQuestions(topic: string, difficulty = 5, language = "English", baseUrl: string): Promise<OpenQuestion> {
+export async function getOpenQuestions(
+  topic: string, 
+  difficulty = 5, 
+  language = "English", 
+  baseUrl: string,
+  count = 5
+): Promise<OpenQuestion[]> {
   return getQuestions({
     difficulty,
     type: "open",
     language,
     topic,
-  }, baseUrl) as Promise<OpenQuestion>;
+    count,
+  }, baseUrl) as Promise<OpenQuestion[]>;
 } 

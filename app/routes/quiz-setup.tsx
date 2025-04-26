@@ -14,12 +14,14 @@ export default function QuizSetup() {
   const [topic, setTopic] = useState("cybersecurity");
   const [questionType, setQuestionType] = useState("multiple-choice");
   const [multiplayer, setMultiplayer] = useState(false);
+  const [questionCount, setQuestionCount] = useState(5);
   
   const handleStartQuiz = () => {
     const queryParams = new URLSearchParams();
     queryParams.set("topic", topic);
     queryParams.set("type", questionType);
     queryParams.set("multiplayer", multiplayer.toString());
+    queryParams.set("count", questionCount.toString());
     
     navigate(`/quiz?${queryParams.toString()}`);
   };
@@ -83,6 +85,29 @@ export default function QuizSetup() {
                 >
                   Open Ended
                 </button>
+              </div>
+            </div>
+            
+            {/* Question Count Selection */}
+            <div className="cyber-border mb-4 p-4 bg-cyber-dark">
+              <h3 className="text-lg font-medium text-white mb-3">Number of Questions</h3>
+              <div className="w-full">
+                <div className="flex items-center justify-between">
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(parseInt(e.target.value))}
+                    className="w-full mr-4 accent-cyber-green"
+                  />
+                  <div className="bg-cyber-navy border border-cyber-border rounded-md p-2 min-w-[50px] text-center">
+                    <span className="text-white font-mono">{questionCount}</span>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-gray-400">
+                  Select how many questions you want in your quiz
+                </p>
               </div>
             </div>
             

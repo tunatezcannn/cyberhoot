@@ -30,6 +30,8 @@ export default function Quiz() {
   const questionType = searchParams.get("type") || "multiple-choice";
   const multiplayerParam = searchParams.get("multiplayer");
   const isMultiplayer = multiplayerParam === "true";
+  const countParam = searchParams.get("count");
+  const questionCount = countParam ? parseInt(countParam) : 5;
   
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -135,13 +137,13 @@ export default function Quiz() {
         topic, 
         questionType,
         difficulty,
-        5, // Number of questions to fetch
+        questionCount, // Use the count from URL parameters
         BASE_URL
       );
       
       // Set a timeout to ensure we don't wait too long for questions
       const timeoutPromise = new Promise<QuizQuestion[]>((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 2000);
+        setTimeout(() => reject(new Error("Request timed out")), 10000);
       });
       
       // Race the fetch against the timeout
@@ -296,7 +298,7 @@ export default function Quiz() {
                   </div>
                   <h2 className="mb-2 text-xl font-bold text-white">Ready to Start Your Quiz?</h2>
                   <p className="mb-6 text-gray-400">
-                    You'll have 20 seconds per question. The quiz will contain 5 questions on {topic}.
+                    You'll have 20 seconds per question. The quiz will contain {questionCount} questions on {topic}.
                     {difficulty !== "all" && ` Difficulty level: ${difficulty}.`}
                   </p>
                   
@@ -374,7 +376,8 @@ export default function Quiz() {
             // Loading screen
             <div className="text-center py-12">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyber-green mb-4"></div>
-              <p className="text-gray-400">Loading questions...</p>
+              <p className="text-gray-400 mb-2">Loading questions...</p>
+              <p className="text-xs text-gray-500">This may take a few moments as we connect to our question database.</p>
             </div>
           ) : error ? (
             // Error screen

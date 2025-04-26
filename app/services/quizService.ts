@@ -261,26 +261,23 @@ export async function fetchQuizQuestions(
     return getFallbackQuestions(difficulty, questionType).slice(0, count);
   }
   
-  // Determine which difficulties to include
-  const difficultiesToFetch = difficulty === "all" 
-    ? ["easy", "medium", "hard"] as const
-    : [difficulty];
-  
-  // Try to fetch questions for each difficulty
-  for (const diffLevel of difficultiesToFetch) {
-    try {
-      // Make API call for this difficulty
-      if (questionType === "multiple-choice" || questionType === "all") {
-        const mcqQuestion = await getMcqQuestions(topic, numericDifficulty, "English", baseUrl);
-        questions.push(convertMcqQuestion(mcqQuestion, diffLevel));
-      } else if (questionType === "open-ended") {
-        const openQuestion = await getOpenQuestions(topic, numericDifficulty, "English", baseUrl);
-        questions.push(convertOpenQuestion(openQuestion, diffLevel));
-      }
-    } catch (error) {
-      console.error(`Error fetching ${diffLevel} difficulty question:`, error);
-      // Continue to next difficulty without using fallbacks
+  try {
+    // Make API call based on question type
+    if (questionType === "multiple-choice" || questionType === "all") {
+      const mcqQuestions = await getMcqQuestions(topic, numericDifficulty, "English", baseUrl, count);
+      // Convert each returned question to our format
+      mcqQuestions.forEach(question => {
+        questions.push(convertMcqQuestion(question, difficulty === "all" ? "medium" : difficulty));
+      });
+    } else if (questionType === "open-ended") {
+      const openQuestions = await getOpenQuestions(topic, numericDifficulty, "English", baseUrl, count);
+      // Convert each returned question to our format
+      openQuestions.forEach(question => {
+        questions.push(convertOpenQuestion(question, difficulty === "all" ? "medium" : difficulty));
+      });
     }
+  } catch (error) {
+    console.error(`Error fetching questions:`, error);
   }
   
   // If we couldn't fetch any questions, use fallbacks
@@ -288,5 +285,5 @@ export async function fetchQuizQuestions(
     return getFallbackQuestions(difficulty, questionType).slice(0, count);
   }
   
-  return questions.slice(0, count); // Return only the requested number
+  return questions.slice(0, count); // Ensure we return only the requested count
 }
