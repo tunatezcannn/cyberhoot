@@ -1,7 +1,6 @@
 package com.touche.cyberhoot.controller;
 
 import com.touche.cyberhoot.service.QuestionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -10,16 +9,19 @@ import java.util.Map;
 @RequestMapping("/ws/questions")
 public class QuestionController {
 
-    @Autowired
-    private QuestionService questionService;
+    private final QuestionService qs;
+
+    public QuestionController(QuestionService qs) {
+        this.qs = qs;
+    }
 
     @PostMapping("/getQuestions")
-    public String getQuestions(@RequestBody Map<String, Object> input) {
-        return "Received input: " + input.toString();
+    public Map<String, Object> getQuestions(@RequestBody Map<String, Object> input) {
+        return qs.getQuestions(input);
     }
 
     @PostMapping("/submitQuestions")
-    public String submitQuestion(@RequestBody Map<String, Object> input) {
-        return "Received input: " + input.toString();
+    public Map<String, Object> submitQuestion(@RequestBody Map<String, Object> input) {
+        return qs.submitQuestions(input);
     }
 }

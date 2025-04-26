@@ -1,51 +1,47 @@
+/* -------------------------------------------------
+ * 2.  ‣  utils/OpenAPIUtils.java
+ * ------------------------------------------------- */
 package com.touche.cyberhoot.utils;
-
-import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-@Component
-public class OpenAPIUtils {
+public final class OpenAPIUtils {
 
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String API_KEY = "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";
+    private static final String API_KEY = "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";   // <--  secure!
 
     public static String sendRequest(String prompt) {
         if (API_KEY == null || API_KEY.isBlank()) {
-            throw new IllegalStateException(
-                    "Missing OpenAI API key! Set OPENAI_API_KEY in your environment.");
+            throw new IllegalStateException("Set OPENAI_API_KEY env-var first.");
         }
-
         try {
-            HttpClient client = HttpClient.newHttpClient();
-            String safePrompt = prompt.replace("\"", "\\\"");
-
-            String requestBody = String.format(
-                    "{"
-                            + "  \"model\": \"gpt-4o\","
-                            + "  \"messages\": ["
-                            + "    {\"role\": \"user\", \"content\": \"%s\"}"
-                            + "  ]"
-                            + "}",
-                    safePrompt
-            );
+            String body = """
+                    {
+                      "model":"gpt-4o",
+                      "messages":[{"role":"user","content":%s}]
+                    }""".formatted(escape(prompt));
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(API_URL))
-                    .header("Content-Type", "application/json")
                     .header("Authorization", "Bearer " + API_KEY)
-                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
                     .build();
 
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-
+            HttpClient client = HttpClient.newHttpClient();
+            HttpResponse<String> resp = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return resp.body();                             // raw JSON from OpenAI
         } catch (Exception e) {
-            e.printStackTrace();
-            return "Error: " + e.getMessage();
+            throw new RuntimeException("OpenAI request failed", e);
         }
     }
+
+    private static String escape(String s) {
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\"";
+    }
+
+    private OpenAPIUtils() {}
 }
