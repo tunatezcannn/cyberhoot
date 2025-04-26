@@ -4,6 +4,7 @@ export type Question = {
   type: "multiple-choice" | "open-ended";
   options?: string[];
   correctAnswer?: string;
+  difficulty: "easy" | "medium" | "hard";
 };
 
 export const passwordSecurityQuestions: Question[] = [
@@ -17,7 +18,8 @@ export const passwordSecurityQuestions: Question[] = [
       "Tr0ub4dor&3",
       "correct-horse-battery-staple"
     ],
-    correctAnswer: "correct-horse-battery-staple"
+    correctAnswer: "correct-horse-battery-staple",
+    difficulty: "easy"
   },
   {
     id: 2,
@@ -29,7 +31,8 @@ export const passwordSecurityQuestions: Question[] = [
       "Brute force attacks",
       "All of the above"
     ],
-    correctAnswer: "All of the above"
+    correctAnswer: "All of the above",
+    difficulty: "easy"
   },
   {
     id: 3,
@@ -41,7 +44,8 @@ export const passwordSecurityQuestions: Question[] = [
       "Once a year",
       "Only when there's a suspected breach"
     ],
-    correctAnswer: "Every 60-90 days"
+    correctAnswer: "Every 60-90 days",
+    difficulty: "medium"
   },
   {
     id: 4,
@@ -53,12 +57,14 @@ export const passwordSecurityQuestions: Question[] = [
       "Use a password manager",
       "Use the same password for all accounts so you remember it"
     ],
-    correctAnswer: "Use a password manager"
+    correctAnswer: "Use a password manager",
+    difficulty: "medium"
   },
   {
     id: 5,
     text: "Explain what two-factor authentication (2FA) is and why it's important for password security.",
-    type: "open-ended"
+    type: "open-ended",
+    difficulty: "hard"
   }
 ];
 
@@ -73,7 +79,8 @@ export const phishingAwarenessQuestions: Question[] = [
       "Has a professional appearance",
       "Contains specific information only relevant to you"
     ],
-    correctAnswer: "Contains urgent action requests"
+    correctAnswer: "Contains urgent action requests",
+    difficulty: "easy"
   },
   {
     id: 2,
@@ -85,7 +92,8 @@ export const phishingAwarenessQuestions: Question[] = [
       "Delete it and report it to IT",
       "Forward it to colleagues to get their opinion"
     ],
-    correctAnswer: "Delete it and report it to IT"
+    correctAnswer: "Delete it and report it to IT",
+    difficulty: "easy"
   },
   {
     id: 3,
@@ -97,7 +105,8 @@ export const phishingAwarenessQuestions: Question[] = [
       "https://accounts.paypal.com/login",
       "https://paypal.com/login"
     ],
-    correctAnswer: "https://www.paypa1.com/account"
+    correctAnswer: "https://www.paypa1.com/account",
+    difficulty: "medium"
   },
   {
     id: 4,
@@ -109,12 +118,14 @@ export const phishingAwarenessQuestions: Question[] = [
       "Using fake websites to collect credentials",
       "Phishing through text messages"
     ],
-    correctAnswer: "Targeted phishing attacks aimed at specific individuals"
+    correctAnswer: "Targeted phishing attacks aimed at specific individuals",
+    difficulty: "medium"
   },
   {
     id: 5,
     text: "Describe a recent phishing attempt you've encountered or heard about, and how you could identify it was a phishing attempt.",
-    type: "open-ended"
+    type: "open-ended",
+    difficulty: "hard"
   }
 ];
 
@@ -129,7 +140,8 @@ export const networkSecurityQuestions: Question[] = [
       "To encrypt data",
       "To improve network speed"
     ],
-    correctAnswer: "To monitor network traffic and block unauthorized access"
+    correctAnswer: "To monitor network traffic and block unauthorized access",
+    difficulty: "easy"
   },
   {
     id: 2,
@@ -141,7 +153,8 @@ export const networkSecurityQuestions: Question[] = [
       "WEP",
       "WPA2-Enterprise"
     ],
-    correctAnswer: "WEP"
+    correctAnswer: "WEP",
+    difficulty: "medium"
   },
   {
     id: 3,
@@ -153,7 +166,8 @@ export const networkSecurityQuestions: Question[] = [
       "Verified Protocol Network - blocks hackers",
       "Virtual Protection Node - removes viruses"
     ],
-    correctAnswer: "Virtual Private Network - creates a secure, encrypted connection"
+    correctAnswer: "Virtual Private Network - creates a secure, encrypted connection",
+    difficulty: "medium"
   },
   {
     id: 4,
@@ -165,12 +179,14 @@ export const networkSecurityQuestions: Question[] = [
       "Man-in-the-middle attacks",
       "Higher data usage"
     ],
-    correctAnswer: "Man-in-the-middle attacks"
+    correctAnswer: "Man-in-the-middle attacks",
+    difficulty: "easy"
   },
   {
     id: 5,
     text: "Explain what network segmentation is and how it improves security.",
-    type: "open-ended"
+    type: "open-ended",
+    difficulty: "hard"
   }
 ];
 

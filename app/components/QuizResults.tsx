@@ -7,6 +7,7 @@ type QuizResultsProps = {
   timeTaken: number;
   onRestart: () => void;
   multiplayerMode?: boolean;
+  difficulty?: "easy" | "medium" | "hard" | "all";
 };
 
 const QuizResults = ({
@@ -16,6 +17,7 @@ const QuizResults = ({
   timeTaken,
   onRestart,
   multiplayerMode = false,
+  difficulty = "all",
 }: QuizResultsProps) => {
   const minutes = Math.floor(timeTaken / 60);
   const seconds = timeTaken % 60;
@@ -58,6 +60,27 @@ const QuizResults = ({
     });
   }
   
+  // Add achievements based on difficulty
+  if (difficulty === "hard") {
+    achievements.push({
+      icon: "🔥",
+      title: "Challenge Seeker",
+      description: "Completed a hard difficulty quiz (9× points)"
+    });
+  } else if (difficulty === "medium") {
+    achievements.push({
+      icon: "🎯",
+      title: "Skilled Player",
+      description: "Completed a medium difficulty quiz (5× points)"
+    });
+  } else if (difficulty === "easy") {
+    achievements.push({
+      icon: "🌟",
+      title: "Beginner",
+      description: "Completed an easy difficulty quiz (3× points)"
+    });
+  }
+  
   // Always give at least one achievement
   if (achievements.length === 0) {
     achievements.push({
@@ -67,6 +90,20 @@ const QuizResults = ({
     });
   }
 
+  // Get difficulty multiplier text
+  const getDifficultyMultiplierText = () => {
+    switch (difficulty) {
+      case "easy":
+        return "(3× points)";
+      case "medium":
+        return "(5× points)";
+      case "hard":
+        return "(9× points)";
+      default:
+        return "";
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 text-center">
@@ -75,6 +112,12 @@ const QuizResults = ({
           <span>{topic}</span>
           <span>•</span>
           <span>{minutes}m {seconds}s</span>
+          {difficulty !== "all" && (
+            <>
+              <span>•</span>
+              <span className="capitalize">{difficulty} Difficulty {getDifficultyMultiplierText()}</span>
+            </>
+          )}
         </div>
       </div>
       

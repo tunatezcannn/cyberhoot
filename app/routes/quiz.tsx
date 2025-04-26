@@ -3,8 +3,10 @@ import { Link, useSearchParams } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
 import QuizInterface from "~/components/QuizInterface";
 import QuizResults from "~/components/QuizResults";
-import { quizQuestions } from "~/data/sampleQuestions";
-import type { Question } from "~/data/sampleQuestions";
+import DifficultySettings from "~/components/DifficultySettings";
+import { fetchQuizQuestions, USE_API, FALLBACK_QUESTIONS } from "~/services/quizService";
+import { initializeAuth } from "~/services/authService";
+import type { QuizQuestion } from "~/services/quizService";
 
 export const meta: MetaFunction = () => {
   return [
@@ -15,7 +17,7 @@ export const meta: MetaFunction = () => {
 
 export default function Quiz() {
   const [searchParams] = useSearchParams();
-  const topic = searchParams.get("topic") || "Password Security";
+  const topic = searchParams.get("topic") || "cybersecurity";
   const questionType = searchParams.get("type") || "multiple-choice";
   const multiplayerParam = searchParams.get("multiplayer");
   const isMultiplayer = multiplayerParam === "true";
@@ -24,10 +26,30 @@ export default function Quiz() {
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizResults, setQuizResults] = useState<{ answers: Record<number, string>; score: number } | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [gameCode, setGameCode] = useState<string>("");
   const [waitingForPlayers, setWaitingForPlayers] = useState(false);
   const [playersJoined, setPlayersJoined] = useState(0);
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard" | "all">("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
+
+  // Initialize authentication
+  useEffect(() => {
+    async function init() {
+      try {
+        await initializeAuth();
+        setAuthInitialized(true);
+      } catch (error) {
+        console.error("Failed to initialize authentication:", error);
+        setError("Failed to authenticate. Using fallback authentication if available.");
+        setAuthInitialized(true); // Still continue with fallback
+      }
+    }
+    
+    init();
+  }, []);
 
   // Generate a random game code
   useEffect(() => {
@@ -37,17 +59,12 @@ export default function Quiz() {
     }
   }, [isMultiplayer]);
 
-  // Initialize questions based on topic and filter by type if specific
+  // Load questions when difficulty, topic, or question type changes
   useEffect(() => {
-    let topicQuestions = quizQuestions[topic] || quizQuestions["Password Security"];
-    
-    // If specific question type is selected, filter questions
-    if (questionType !== "all") {
-      topicQuestions = topicQuestions.filter(q => q.type === questionType);
-    }
-    
-    setQuestions(topicQuestions);
-  }, [topic, questionType]);
+    // Clear any existing questions when settings change
+    setQuestions([]);
+    setError(null);
+  }, [topic, questionType, difficulty]);
 
   // Timer for tracking total quiz time
   useEffect(() => {
@@ -91,8 +108,58 @@ export default function Quiz() {
     }, 6000);
   };
 
-  const handleStartQuiz = () => {
+  const loadQuestions = async () => {
+    if (!authInitialized) {
+      setError("Authentication not initialized. Please wait or refresh the page.");
+      return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Only make API calls
+      const fetchPromise = fetchQuizQuestions(
+        topic, 
+        questionType,
+        difficulty,
+        5 // Number of questions to fetch
+      );
+      
+      // Set a timeout to ensure we don't wait too long for questions
+      const timeoutPromise = new Promise<QuizQuestion[]>((_, reject) => {
+        setTimeout(() => reject(new Error("Request timed out")), 2000);
+      });
+      
+      // Race the fetch against the timeout
+      const fetchedQuestions = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (fetchedQuestions.length === 0) {
+        throw new Error("No questions received");
+      }
+      
+      setQuestions(fetchedQuestions);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Failed to load questions:", err);
+      setIsLoading(false);
+      setError("Unable to load quiz questions. Please try again later.");
+    }
+  };
+
+  const handleStartQuiz = async () => {
     setWaitingForPlayers(false);
+    
+    // Load questions if not already loaded
+    if (questions.length === 0) {
+      await loadQuestions();
+    }
+    
+    if (error) {
+      // If there was an error loading questions, don't start the quiz
+      return;
+    }
+    
     setQuizStarted(true);
     setElapsedTime(0);
   };
@@ -103,12 +170,21 @@ export default function Quiz() {
   };
 
   const handleRestartQuiz = () => {
+    // Reset quiz state
+    setQuestions([]);
     setQuizStarted(true);
     setQuizCompleted(false);
     setQuizResults(null);
     setElapsedTime(0);
     setPlayersJoined(0);
     setWaitingForPlayers(false);
+    
+    // Load new questions
+    loadQuestions();
+  };
+
+  const handleDifficultyChange = (newDifficulty: "easy" | "medium" | "hard" | "all") => {
+    setDifficulty(newDifficulty);
   };
 
   return (
@@ -200,6 +276,14 @@ export default function Quiz() {
                   </div>
                 </div>
                 
+                {/* Difficulty Settings for Single Player only */}
+                {!isMultiplayer && (
+                  <DifficultySettings 
+                    selectedDifficulty={difficulty}
+                    onDifficultyChange={handleDifficultyChange}
+                  />
+                )}
+                
                 <div className="mb-8 rounded-lg border border-dashed border-cyber-border bg-cyber-dark/50 p-6 text-center">
                   <div className="mb-4 flex justify-center">
                     <svg className="h-12 w-12 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -208,34 +292,47 @@ export default function Quiz() {
                   </div>
                   <h2 className="mb-2 text-xl font-bold text-white">Ready to Start Your Quiz?</h2>
                   <p className="mb-6 text-gray-400">
-                    You'll have 20 seconds per question. The quiz contains {questions.length} questions on {topic}.
+                    You'll have 20 seconds per question. The quiz will contain 5 questions on {topic}.
+                    {difficulty !== "all" && ` Difficulty level: ${difficulty}.`}
                   </p>
                   
                   <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button 
                       onClick={handleStartQuiz}
                       className="group relative overflow-hidden rounded-md bg-cyber-green px-6 py-3 text-sm font-bold text-cyber-dark transition-all duration-300 hover:bg-opacity-90"
+                      disabled={isLoading}
                     >
                       <span className="relative z-10 flex items-center justify-center">
-                        Single Player
-                        <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                        {isLoading ? "Loading..." : "Single Player"}
+                        {!isLoading && (
+                          <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                          </svg>
+                        )}
                       </span>
                     </button>
                     
                     <button 
                       onClick={handleStartWaiting}
                       className="group relative overflow-hidden rounded-md border border-cyber-green bg-transparent px-6 py-3 text-sm font-bold text-cyber-green transition-all duration-300 hover:bg-cyber-green/10"
+                      disabled={isLoading}
                     >
                       <span className="relative z-10 flex items-center justify-center">
-                        Multiplayer
-                        <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
+                        {isLoading ? "Loading..." : "Multiplayer"}
+                        {!isLoading && (
+                          <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        )}
                       </span>
                     </button>
                   </div>
+                  
+                  {error && (
+                    <div className="mb-4 p-3 bg-red-500/20 border border-red-500 rounded-md">
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                  )}
                   
                   <div className="flex items-center justify-center space-x-1 text-xs text-gray-500">
                     <svg className="h-3 w-3 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -267,15 +364,52 @@ export default function Quiz() {
               timeTaken={elapsedTime}
               onRestart={handleRestartQuiz}
               multiplayerMode={isMultiplayer || waitingForPlayers}
+              difficulty={difficulty}
             />
-          ) : (
+          ) : isLoading ? (
+            // Loading screen
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyber-green mb-4"></div>
+              <p className="text-gray-400">Loading questions...</p>
+            </div>
+          ) : error ? (
+            // Error screen
+            <div className="text-center py-10">
+              <svg className="h-16 w-16 text-red-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h3 className="text-xl font-bold mb-2">Error Loading Questions</h3>
+              <p className="mb-6 text-gray-400">{error}</p>
+              <button
+                onClick={() => {
+                  setError(null);
+                  loadQuestions();
+                }}
+                className="cyber-border bg-cyber-dark px-6 py-2 hover:border-cyber-green transition-all"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : questions.length > 0 ? (
             // Quiz in progress
             <QuizInterface 
               questions={questions}
               quizType={questionType}
               onComplete={handleQuizComplete}
               timePerQuestion={20}
+              difficulty={difficulty}
             />
+          ) : (
+            // Empty state - this shouldn't normally happen but just in case
+            <div className="text-center py-10">
+              <p className="text-gray-400 mb-4">No questions available. Please try again.</p>
+              <button
+                onClick={loadQuestions}
+                className="cyber-border bg-cyber-dark px-6 py-2 hover:border-cyber-green transition-all"
+              >
+                Load Questions
+              </button>
+            </div>
           )}
         </div>
       </div>

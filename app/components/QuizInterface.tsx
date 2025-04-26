@@ -6,6 +6,7 @@ type QuestionType = {
   type: "multiple-choice" | "open-ended";
   options?: string[];
   correctAnswer?: string | string[];
+  difficulty: "easy" | "medium" | "hard";
 };
 
 type QuizInterfaceProps = {
@@ -13,6 +14,7 @@ type QuizInterfaceProps = {
   quizType: string;
   onComplete: (results: { answers: Record<number, string>; score: number }) => void;
   timePerQuestion?: number;
+  difficulty?: "easy" | "medium" | "hard" | "all";
 };
 
 const QuizInterface = ({
@@ -20,6 +22,7 @@ const QuizInterface = ({
   quizType,
   onComplete,
   timePerQuestion = 20,
+  difficulty = "all",
 }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -90,13 +93,29 @@ const QuizInterface = ({
     }
   };
 
+  const getDifficultyMultiplier = (questionDifficulty: "easy" | "medium" | "hard") => {
+    switch (questionDifficulty) {
+      case "easy":
+        return 3;
+      case "medium":
+        return 5;
+      case "hard":
+        return 9;
+      default:
+        return 1;
+    }
+  };
+
   const calculatePoints = () => {
-    // Base points + time bonus + streak bonus
+    // Base points + time bonus + streak bonus + difficulty multiplier
     const basePoints = 100;
     const timeBonus = Math.floor((timeLeft / timePerQuestion) * 50);
     const streakBonus = Math.min(streak * 10, 50); // Cap streak bonus at 50
     
-    return basePoints + timeBonus + streakBonus;
+    // Apply difficulty multiplier
+    const difficultyMultiplier = getDifficultyMultiplier(currentQuestion.difficulty);
+    
+    return (basePoints + timeBonus + streakBonus) * difficultyMultiplier;
   };
 
   const handleOptionSelect = (option: string) => {
