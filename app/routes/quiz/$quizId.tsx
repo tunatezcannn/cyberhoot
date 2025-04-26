@@ -26,6 +26,33 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
   // For server-side rendering, we skip the authentication check for now
   // In a real app, you would validate the token from cookies or session
   
+  // Get API base URL from environment variables, with fallback
+  const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+  let apiAvailable = false;
+  
+  try {
+    // Check if the API is available
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    
+    try {
+      // Perform a lightweight check to see if the server is up
+      await fetch(`${BASE_URL}/health`, { 
+        method: 'GET',
+        signal: controller.signal 
+      });
+      apiAvailable = true;
+    } catch (e) {
+      // Server is not responding, we'll use mock data
+      console.log("API server not available for quiz, using mock data");
+      apiAvailable = false;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error) {
+    console.error("Error checking API availability:", error);
+  }
+  
   const quizId = params.quizId;
 
   // In a real app, you would fetch this data from your API
@@ -100,7 +127,11 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Response("Quiz not found", { status: 404 });
   }
 
-  return json({ quiz });
+  return json({ 
+    quiz,
+    apiAvailable,
+    BASE_URL
+  });
 };
 
 export const meta: MetaFunction = () => {

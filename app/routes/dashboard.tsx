@@ -28,6 +28,33 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Check if user is authenticated - for now we're assuming the fallback token is valid
   // In a real app, you would validate the token from cookies or session
   
+  // Get API base URL from environment variables, with fallback
+  const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+  let apiAvailable = false;
+  
+  try {
+    // Check if the API is available
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    
+    try {
+      // Perform a lightweight check to see if the server is up
+      await fetch(`${BASE_URL}/health`, { 
+        method: 'GET',
+        signal: controller.signal 
+      });
+      apiAvailable = true;
+    } catch (e) {
+      // Server is not responding, we'll use mock data
+      console.log("API server not available for dashboard, using mock data");
+      apiAvailable = false;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  } catch (error) {
+    console.error("Error checking API availability:", error);
+  }
+  
   // In a real app, you would fetch this data from your API
   // Sample data for demonstration
   const upcomingQuizzes: QuizOverview[] = [
@@ -75,7 +102,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return json({
     upcomingQuizzes,
-    analytics
+    analytics,
+    apiAvailable,
+    BASE_URL
   });
 };
 
