@@ -70,8 +70,12 @@ export async function getQuestions(params: QuestionRequest, baseUrl: string): Pr
     const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduce timeout to 3 seconds
     
     try {
-      // Make API call to the backend
-      const response = await fetch(`${baseUrl}/ws/questions/getQuestions`, {
+      // Use proxy URL instead of direct server URL
+      // We will replace the baseUrl with the proxy URL pattern
+      const url = `/api/ws/questions/getQuestions`;
+      
+      // Make API call to the backend via the proxy
+      const response = await fetch(url, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(validatedParams),

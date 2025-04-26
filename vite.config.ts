@@ -21,4 +21,17 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  
+  // Add proxy configuration to handle CORS for the API requests
+  server: {
+    proxy: {
+      // Proxy API requests to the remote server
+      '/api': {
+        target: 'http://10.8.51.23:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false,
+      }
+    }
+  }
 });

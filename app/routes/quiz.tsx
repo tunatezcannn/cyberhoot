@@ -131,13 +131,14 @@ export default function Quiz() {
     
     try {
       // Use the baseUrl from the loader data
-      const fetchPromise = fetchQuizQuestions(
+      const fetchPromise = await fetchQuizQuestions(
         topic, 
         questionType,
         difficulty,
         5, // Number of questions to fetch
         BASE_URL
       );
+      //console.log((await fetchPromise));
       
       // Set a timeout to ensure we don't wait too long for questions
       const timeoutPromise = new Promise<QuizQuestion[]>((_, reject) => {
