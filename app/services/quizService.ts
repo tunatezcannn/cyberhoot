@@ -249,10 +249,17 @@ export async function fetchQuizQuestions(
   topic: string,
   questionType: string = "multiple-choice",
   difficulty: "easy" | "medium" | "hard" | "all" = "all",
-  count: number = 5
+  count: number = 5,
+  baseUrl?: string
 ): Promise<QuizQuestion[]> {
   const questions: QuizQuestion[] = [];
   const numericDifficulty = difficultyToNumber(difficulty);
+  
+  // If no baseUrl is provided, use fallback questions
+  if (!baseUrl) {
+    console.warn("No baseUrl provided, using fallback questions");
+    return getFallbackQuestions(difficulty, questionType).slice(0, count);
+  }
   
   // Determine which difficulties to include
   const difficultiesToFetch = difficulty === "all" 
@@ -264,10 +271,10 @@ export async function fetchQuizQuestions(
     try {
       // Make API call for this difficulty
       if (questionType === "multiple-choice" || questionType === "all") {
-        const mcqQuestion = await getMcqQuestions(topic, numericDifficulty);
+        const mcqQuestion = await getMcqQuestions(topic, numericDifficulty, "English", baseUrl);
         questions.push(convertMcqQuestion(mcqQuestion, diffLevel));
       } else if (questionType === "open-ended") {
-        const openQuestion = await getOpenQuestions(topic, numericDifficulty);
+        const openQuestion = await getOpenQuestions(topic, numericDifficulty, "English", baseUrl);
         questions.push(convertOpenQuestion(openQuestion, diffLevel));
       }
     } catch (error) {
@@ -276,10 +283,10 @@ export async function fetchQuizQuestions(
     }
   }
   
-  // If we couldn't fetch any questions, throw an error
+  // If we couldn't fetch any questions, use fallbacks
   if (questions.length === 0) {
-    throw new Error("Could not fetch any questions from the API");
+    return getFallbackQuestions(difficulty, questionType).slice(0, count);
   }
   
   return questions.slice(0, count); // Return only the requested number
-} 
+}

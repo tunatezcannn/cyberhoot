@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams, useNavigate } from "@remix-run/react";
-import type { MetaFunction } from "@remix-run/node";
+import { Link, useSearchParams, useNavigate, useLoaderData } from "@remix-run/react";
+import type { MetaFunction, LoaderFunctionArgs } from "@remix-run/node";
+import { json } from "@remix-run/node";
 import QuizInterface from "~/components/QuizInterface";
 import QuizResults from "~/components/QuizResults";
 import DifficultySettings from "~/components/DifficultySettings";
@@ -15,7 +16,14 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  return json({
+    BASE_URL: process.env.BASE_URL
+  });
+};
+
 export default function Quiz() {
+  const { BASE_URL } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const topic = searchParams.get("topic") || "cybersecurity";
@@ -40,7 +48,10 @@ export default function Quiz() {
   useEffect(() => {
     async function init() {
       try {
-        await initializeAuth();
+        if (!BASE_URL) {
+          throw new Error("BASE_URL is not defined");
+        }
+        await initializeAuth(BASE_URL);
         setAuthInitialized(true);
       } catch (error) {
         console.error("Failed to initialize authentication:", error);
@@ -50,7 +61,7 @@ export default function Quiz() {
     }
     
     init();
-  }, []);
+  }, [BASE_URL]);
 
   // Generate a random game code
   useEffect(() => {
@@ -119,12 +130,13 @@ export default function Quiz() {
     setError(null);
     
     try {
-      // Only make API calls
+      // Use the baseUrl from the loader data
       const fetchPromise = fetchQuizQuestions(
         topic, 
         questionType,
         difficulty,
-        5 // Number of questions to fetch
+        5, // Number of questions to fetch
+        BASE_URL
       );
       
       // Set a timeout to ensure we don't wait too long for questions

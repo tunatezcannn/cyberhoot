@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getAuthToken, FALLBACK_TOKEN } from "./authService";
+import { useLoaderData } from "@remix-run/react";
 
 // Skip API calls to avoid connection errors
 const USE_MOCK_DATA = false;
@@ -51,7 +52,7 @@ function getAuthHeaders(): HeadersInit {
 /**
  * Fetches questions from the server based on provided parameters
  */
-export async function getQuestions(params: QuestionRequest): Promise<Question> {
+export async function getQuestions(params: QuestionRequest, baseUrl: string): Promise<Question> {
   // Skip API calls entirely if mock data is enabled
   if (USE_MOCK_DATA) {
     console.log("Using mock data instead of API call");
@@ -70,7 +71,7 @@ export async function getQuestions(params: QuestionRequest): Promise<Question> {
     
     try {
       // Make API call to the backend
-      const response = await fetch(`${process.env.BASE_URL}/ws/questions/getQuestions`, {
+      const response = await fetch(`${baseUrl}/ws/questions/getQuestions`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(validatedParams),
@@ -152,23 +153,23 @@ function createMockOpenQuestion(topic: string): OpenQuestion {
 /**
  * Get multiple choice questions
  */
-export async function getMcqQuestions(topic: string, difficulty = 5, language = "English"): Promise<McqQuestion> {
+export async function getMcqQuestions(topic: string, difficulty = 5, language = "English", baseUrl: string): Promise<McqQuestion> {
   return getQuestions({
     difficulty,
     type: "mcq",
     language,
     topic,
-  }) as Promise<McqQuestion>;
+  }, baseUrl) as Promise<McqQuestion>;
 }
 
 /**
  * Get open-ended questions
  */
-export async function getOpenQuestions(topic: string, difficulty = 5, language = "English"): Promise<OpenQuestion> {
+export async function getOpenQuestions(topic: string, difficulty = 5, language = "English", baseUrl: string): Promise<OpenQuestion> {
   return getQuestions({
     difficulty,
     type: "open",
     language,
     topic,
-  }) as Promise<OpenQuestion>;
+  }, baseUrl) as Promise<OpenQuestion>;
 } 
