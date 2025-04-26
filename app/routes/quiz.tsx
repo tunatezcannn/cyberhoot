@@ -403,6 +403,7 @@ export default function Quiz() {
               onComplete={handleQuizComplete}
               timePerQuestion={20}
               difficulty={difficulty}
+              baseUrl={BASE_URL}
             />
           ) : (
             // Empty state - this shouldn't normally happen but just in case

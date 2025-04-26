@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getUsername, getAuthToken } from "~/services/authService";
 
 type QuestionType = {
   id: number;
@@ -16,6 +17,7 @@ type QuizInterfaceProps = {
   onComplete: (results: { answers: Record<number, string>; score: number }) => void;
   timePerQuestion?: number;
   difficulty?: "easy" | "medium" | "hard" | "all";
+  baseUrl?: string;
 };
 
 const QuizInterface = ({
@@ -24,6 +26,7 @@ const QuizInterface = ({
   onComplete,
   timePerQuestion = 20,
   difficulty = "all",
+  baseUrl,
 }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -136,6 +139,49 @@ const QuizInterface = ({
     if (currentQuestion.type === "multiple-choice") {
       checkAnswer(option);
       setFeedbackVisible(true);
+      
+      // Submit the answer to the server
+      submitAnswerToServer(option);
+    }
+  };
+
+  const submitAnswerToServer = async (userAnswer: string) => {
+    if (!baseUrl) {
+      console.warn("BASE_URL is not defined, cannot submit answer to server");
+      return;
+    }
+    
+    try {
+      // Get the option letter (A, B, C, D) based on the index
+      const answerIndex = currentQuestion.options?.findIndex(opt => opt === userAnswer) ?? 0;
+      const answerLetter = ["A", "B", "C", "D"][answerIndex];
+      const username = getUsername();
+      const token = getAuthToken();
+      
+      console.log(`Submitting answer: Question ID ${currentQuestion.id}, User ${username}, Answer ${answerLetter}`);
+      
+      const payload = {
+        questionId: currentQuestion.id,
+        username,
+        userAnswer: answerLetter
+      };
+      
+      const response = await fetch(`${baseUrl}/ws/questions/submitAnswer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        console.error(`Failed to submit answer: ${response.status} ${response.statusText}`);
+      } else {
+        console.log("Answer submitted successfully");
+      }
+    } catch (error) {
+      console.error("Error submitting answer:", error);
     }
   };
 
