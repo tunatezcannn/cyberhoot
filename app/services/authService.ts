@@ -17,7 +17,7 @@ let authToken: string | null = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6InRlc3QiLCJ
 /**
  * Login to the server and get authentication token
  */
-export async function login(credentials: LoginRequest, apiBaseUrl = "http://localhost:8080"): Promise<LoginResponse> {
+export async function login(credentials: LoginRequest, apiBaseUrl = `${process.env.BASE_URL}`): Promise<LoginResponse> {
   try {
     const response = await fetch(`${apiBaseUrl}/ws/auth/login`, {
       method: "POST",
@@ -77,7 +77,7 @@ export function isAuthenticated(): boolean {
 
 // Initialize with test credentials for development
 // In production, you would remove this or make it conditional on development mode
-export async function initializeAuth(apiBaseUrl = "http://localhost:8080"): Promise<boolean> {
+export async function initializeAuth(apiBaseUrl = `${process.env.BASE_URL}`): Promise<boolean> {
   try {
     if (isAuthenticated()) {
       return true; // Already authenticated with fallback token

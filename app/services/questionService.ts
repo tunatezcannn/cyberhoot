@@ -35,9 +35,6 @@ const QuestionRequestSchema = z.object({
 
 export type QuestionRequest = z.infer<typeof QuestionRequestSchema>;
 
-// API base URL - change this to match the actual server
-const API_BASE_URL = "http://localhost:8080";
-
 /**
  * Helper to get auth headers for API requests
  */
@@ -73,7 +70,7 @@ export async function getQuestions(params: QuestionRequest): Promise<Question> {
     
     try {
       // Make API call to the backend
-      const response = await fetch(`${API_BASE_URL}/ws/questions/getQuestions`, {
+      const response = await fetch(`${process.env.BASE_URL}/ws/questions/getQuestions`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(validatedParams),

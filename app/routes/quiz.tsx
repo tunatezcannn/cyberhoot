@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useSearchParams } from "@remix-run/react";
+import { Link, useSearchParams, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@remix-run/node";
 import QuizInterface from "~/components/QuizInterface";
 import QuizResults from "~/components/QuizResults";
@@ -17,6 +17,7 @@ export const meta: MetaFunction = () => {
 
 export default function Quiz() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const topic = searchParams.get("topic") || "cybersecurity";
   const questionType = searchParams.get("type") || "multiple-choice";
   const multiplayerParam = searchParams.get("multiplayer");
@@ -170,17 +171,8 @@ export default function Quiz() {
   };
 
   const handleRestartQuiz = () => {
-    // Reset quiz state
-    setQuestions([]);
-    setQuizStarted(true);
-    setQuizCompleted(false);
-    setQuizResults(null);
-    setElapsedTime(0);
-    setPlayersJoined(0);
-    setWaitingForPlayers(false);
-    
-    // Load new questions
-    loadQuestions();
+    // Navigate to quiz setup page instead of restarting directly
+    navigate("/quiz-setup");
   };
 
   const handleDifficultyChange = (newDifficulty: "easy" | "medium" | "hard" | "all") => {

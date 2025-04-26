@@ -44,6 +44,17 @@ export default function Index() {
             
             <div className="flex flex-col items-center justify-center space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
               <Link 
+                to="/quiz-setup" 
+                className="w-full rounded-md bg-cyber-green px-6 py-3 text-base font-medium text-cyber-dark transition-colors hover:bg-opacity-90 sm:w-auto"
+              >
+                <span className="flex items-center justify-center">
+                  Take Quiz
+                  <svg className="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                </span>
+              </Link>
+              <Link 
                 to="/login" 
                 className="w-full rounded-md border border-cyber-green bg-transparent px-6 py-3 text-base font-medium text-cyber-green transition-colors hover:bg-cyber-green hover:text-cyber-dark sm:w-auto"
               >
@@ -51,10 +62,10 @@ export default function Index() {
               </Link>
               <Link 
                 to="/register" 
-                className="group relative w-full overflow-hidden rounded-md bg-cyber-green px-6 py-3 text-base font-medium text-cyber-dark transition-all duration-300 hover:bg-opacity-90 sm:w-auto"
+                className="group relative w-full overflow-hidden rounded-md bg-transparent border border-gray-600 px-6 py-3 text-base font-medium text-white transition-all duration-300 hover:border-white sm:w-auto"
               >
                 <span className="relative z-10 flex items-center justify-center">
-                  Register Now
+                  Register
                   <svg className="ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -95,6 +106,16 @@ export default function Index() {
             <h3 className="mb-2 text-xl font-bold text-white">Instant Feedback</h3>
             <p className="text-gray-400">Receive immediate insights and explanations to help deepen your understanding.</p>
           </div>
+        </div>
+        
+        {/* Call to action */}
+        <div className="mt-16 mb-20">
+          <Link
+            to="/quiz-setup"
+            className="cyber-border px-8 py-4 bg-cyber-dark text-white font-medium hover:border-cyber-green hover:text-cyber-green transition-all duration-300"
+          >
+            Start a Quiz Now
+          </Link>
         </div>
       </main>
 
