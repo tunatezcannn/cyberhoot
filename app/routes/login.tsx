@@ -161,17 +161,7 @@ export default function Login() {
                 </svg>
               </div>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-cyber-border bg-cyber-dark text-cyber-green focus:ring-cyber-green"
-                />
-              </div>
-            </div>
+          
             <button
               type="submit"
               disabled={loading}
