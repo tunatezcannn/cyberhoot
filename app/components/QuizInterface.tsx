@@ -10,13 +10,13 @@ type QuestionType = {
   correctAnswer?: string | string[];
   answer?: string;
   difficulty: "easy" | "medium" | "hard";
+  solvingTime?: number;
 };
 
 type QuizInterfaceProps = {
   questions: QuestionType[];
   quizType: string;
   onComplete: (results: { answers: Record<number, string>; score: number }) => void;
-  timePerQuestion?: number;
   difficulty?: "easy" | "medium" | "hard" | "all";
   baseUrl?: string;
 };
@@ -25,13 +25,12 @@ const QuizInterface = ({
   questions,
   quizType,
   onComplete,
-  timePerQuestion = 20,
   difficulty = "all",
   baseUrl,
 }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(timePerQuestion);
+  const [timeLeft, setTimeLeft] = useState(30); // Default to 30 seconds initially
   const [isAnswered, setIsAnswered] = useState(false);
   const [textAnswer, setTextAnswer] = useState("");
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -43,6 +42,13 @@ const QuizInterface = ({
   const totalQuestions = questions.length;
   const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
+  // Update timeLeft when questions array changes or current question index changes
+  useEffect(() => {
+    if (questions.length > 0 && questions[currentQuestionIndex]) {
+      setTimeLeft(questions[currentQuestionIndex].solvingTime || 30);
+    }
+  }, [questions, currentQuestionIndex]);
+
   // Timer effect
   useEffect(() => {
     if (isAnswered || feedbackVisible) return;
@@ -53,23 +59,25 @@ const QuizInterface = ({
           clearInterval(timer);
           // Auto submit current answer when time runs out
           handleTimeUp();
-          return timePerQuestion;
+          return currentQuestion.solvingTime || 30;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, isAnswered, feedbackVisible, timePerQuestion]);
+  }, [currentQuestionIndex, isAnswered, feedbackVisible, currentQuestion?.solvingTime]);
 
   // Reset state for new question
   useEffect(() => {
-    setTimeLeft(timePerQuestion);
-    setIsAnswered(false);
-    setTextAnswer("");
-    setFeedbackVisible(false);
-    setIsCorrect(null);
-  }, [currentQuestionIndex, timePerQuestion]);
+    // Only update if questions have loaded
+    if (questions.length > 0 && currentQuestion) {
+      setIsAnswered(false);
+      setTextAnswer("");
+      setFeedbackVisible(false);
+      setIsCorrect(null);
+    }
+  }, [currentQuestionIndex, currentQuestion]);
 
   const handleTimeUp = () => {
     if (currentQuestion.type === "multiple-choice") {
@@ -78,9 +86,41 @@ const QuizInterface = ({
       setFeedbackVisible(true);
       setIsCorrect(false);
       setStreak(0); // Reset streak on timeout
+      
+      // Submit the timed-out answer with score of 0
+      if (baseUrl) {
+        const username = getUsername();
+        submitAnswer(
+          currentQuestion.id,
+          username,
+          "TIMEOUT", // Special indicator for timeout
+          baseUrl,
+          0 // Score is 0 for timeout
+        )
+        .then(result => {
+          // Check if the response includes solvingTime
+          if (typeof result === 'object' && 'solvingTime' in result && result.solvingTime) {
+            setTimeLeft(result.solvingTime);
+          }
+        })
+        .catch(error => console.error("Error submitting timeout answer:", error));
+      }
     } else {
-      // For open-ended, just move to the next question
-      handleNextQuestion();
+      // For open-ended questions, mark as answered and show feedback
+      setIsAnswered(true);
+      setFeedbackVisible(true);
+      setIsCorrect(null); // Neutral state for open-ended
+      setStreak(0); // Reset streak on timeout
+      
+      // If user has typed something, submit that with a score of 0
+      if (textAnswer.trim()) {
+        submitOpenEndedAnswer(textAnswer, 0)
+          .catch(error => console.error("Error submitting timeout open-ended answer:", error));
+      } else {
+        // If nothing typed, submit TIMEOUT indicator
+        submitOpenEndedAnswer("TIMEOUT", 0) // Special indicator for timeout
+          .catch(error => console.error("Error submitting timeout open-ended answer:", error));
+      }
     }
   };
 
@@ -92,14 +132,19 @@ const QuizInterface = ({
         const isAnswerCorrect = selectedOption === correctValue;
         setIsCorrect(isAnswerCorrect);
         
+        const pointsEarned = isAnswerCorrect ? calculatePoints() : 0;
+        
         if (isAnswerCorrect) {
-          setScore(prev => prev + calculatePoints());
+          setScore(prev => prev + pointsEarned);
           setStreak(prev => prev + 1);
         } else {
           setStreak(0);
         }
+        
+        return pointsEarned;
       }
     }
+    return 0;
   };
 
   const getDifficultyMultiplier = (questionDifficulty: "easy" | "medium" | "hard") => {
@@ -118,7 +163,8 @@ const QuizInterface = ({
   const calculatePoints = () => {
     // Base points + time bonus + streak bonus + difficulty multiplier
     const basePoints = 100;
-    const timeBonus = Math.floor((timeLeft / timePerQuestion) * 50);
+    const questionTime = currentQuestion.solvingTime || 30;
+    const timeBonus = Math.floor((timeLeft / questionTime) * 50);
     const streakBonus = Math.min(streak * 10, 50); // Cap streak bonus at 50
     
     // Apply difficulty multiplier
@@ -138,15 +184,15 @@ const QuizInterface = ({
     
     // Check answer and show feedback for multiple choice
     if (currentQuestion.type === "multiple-choice") {
-      checkAnswer(option);
+      const questionPoints = checkAnswer(option);
       setFeedbackVisible(true);
       
       // Submit the answer to the server
-      submitAnswerToServer(option);
+      submitAnswerToServer(option, questionPoints);
     }
   };
 
-  const submitAnswerToServer = async (userAnswer: string) => {
+  const submitAnswerToServer = async (userAnswer: string, questionPoints: number = 0) => {
     if (!baseUrl) {
       console.warn("BASE_URL is not defined, cannot submit answer to server");
       return;
@@ -158,20 +204,26 @@ const QuizInterface = ({
       const answerLetter = ["A", "B", "C", "D"][answerIndex];
       const username = getUsername();
       
-      console.log(`Submitting answer: Question ID ${currentQuestion.id}, User ${username}, Answer ${answerLetter}`);
+      console.log(`Submitting answer: Question ID ${currentQuestion.id}, User ${username}, Answer ${answerLetter}, Question Score ${questionPoints}`);
       
       // Use the submitAnswer function from questionService
-      const success = await submitAnswer(
+      const result = await submitAnswer(
         currentQuestion.id,
         username,
         answerLetter,
-        baseUrl
+        baseUrl,
+        questionPoints  // Send individual question score instead of total score
       );
       
-      if (!success) {
+      if (!result) {
         console.error("Failed to submit answer");
       } else {
         console.log("Answer submitted successfully");
+        
+        // Check if the response includes solvingTime
+        if (typeof result === 'object' && 'solvingTime' in result && result.solvingTime) {
+          setTimeLeft(result.solvingTime);
+        }
       }
     } catch (error) {
       console.error("Error submitting answer:", error);
@@ -192,11 +244,11 @@ const QuizInterface = ({
     // just acknowledge submission
     setFeedbackVisible(true);
     
-    // Submit the open-ended answer to the server
-    submitOpenAnswerToServer(textAnswer);
+    // Submit the open-ended answer to the server with 0 points
+    submitOpenEndedAnswer(textAnswer, 0);
   };
 
-  const submitOpenAnswerToServer = async (userAnswer: string) => {
+  const submitOpenEndedAnswer = async (userAnswer: string, questionPoints: number = 0) => {
     if (!baseUrl) {
       console.warn("BASE_URL is not defined, cannot submit answer to server");
       return;
@@ -205,23 +257,46 @@ const QuizInterface = ({
     try {
       const username = getUsername();
       
-      console.log(`Submitting open answer: Question ID ${currentQuestion.id}, User ${username}`);
+      console.log(`Submitting open answer: Question ID ${currentQuestion.id}, User ${username}, Question Score ${questionPoints}`);
       
       // Use the submitAnswer function from questionService
-      const success = await submitAnswer(
-        currentQuestion.id,
-        username,
-        userAnswer,
-        baseUrl
-      );
+      const response = await fetch(`/api/ws/questions/submitAnswer`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getAuthToken()}`
+        },
+        body: JSON.stringify({
+          questionId: currentQuestion.id,
+          username,
+          userAnswer,
+          score: questionPoints
+        })
+      });
       
-      if (!success) {
+      if (!response.ok) {
         console.error("Failed to submit open-ended answer");
-      } else {
-        console.log("Open-ended answer submitted successfully");
+        return false;
       }
+      
+      // Parse response to get the score
+      const data = await response.json();
+      console.log("Open-ended answer response:", data);
+      
+      // Add the score to the total score
+      if (data && data.score) {
+        setScore(prev => prev + data.score);
+      }
+      
+      // Update solving time if provided in the response
+      if (data && data.solvingTime) {
+        setTimeLeft(data.solvingTime);
+      }
+      
+      return true;
     } catch (error) {
       console.error("Error submitting open-ended answer:", error);
+      return false;
     }
   };
 
@@ -236,12 +311,14 @@ const QuizInterface = ({
 
     if (currentQuestionIndex < totalQuestions - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      // Reset state for next question
+      setIsAnswered(false);
+      setFeedbackVisible(false);
+      setTextAnswer("");
     } else {
-      // Calculate final score (including open-ended questions without scoring)
-      const multipleChoiceQuestions = questions.filter(q => q.type === "multiple-choice");
-      
-      // Complete the quiz
-      onComplete({ answers, score: score });
+      // Complete the quiz with final score that includes open-ended questions
+      console.log(`Quiz completed with total score: ${score}`);
+      onComplete({ answers, score });
     }
   };
 
@@ -271,7 +348,7 @@ const QuizInterface = ({
       <div className="mb-4 relative w-full h-2 bg-cyber-border rounded-full overflow-hidden">
         <div 
           className="absolute inset-0 bg-cyber-green transition-all duration-1000 ease-linear origin-left"
-          style={{ transform: `scaleX(${timeLeft / timePerQuestion})` }}
+          style={{ transform: `scaleX(${timeLeft / (currentQuestion.solvingTime || 30)})` }}
         ></div>
       </div>
       
@@ -406,7 +483,9 @@ const QuizInterface = ({
                 <svg className="h-6 w-6 text-cyber-green mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="font-medium">Answer submitted!</span>
+                <span className="font-medium">
+                  {timeLeft === 0 ? "Time's up! Click Next to continue." : "Answer submitted!"}
+                </span>
               </>
             )}
           </div>

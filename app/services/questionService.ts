@@ -14,6 +14,7 @@ export type McqQuestion = {
   options: string[];
   correctAnswer?: string;
   answer?: string;
+  solvingTime?: number;
 };
 
 export type OpenQuestion = {
@@ -22,6 +23,7 @@ export type OpenQuestion = {
   language: string;
   topic: string;
   text: string;
+  solvingTime?: number;
 };
 
 export type Question = McqQuestion | OpenQuestion;
@@ -212,8 +214,9 @@ export async function submitAnswer(
   questionId: string | number,
   username: string,
   userAnswer: string,
-  baseUrl: string
-): Promise<boolean> {
+  baseUrl: string,
+  score?: number
+): Promise<{ success: boolean; solvingTime?: number } | boolean> {
   // Skip API calls entirely if mock data is enabled
   if (USE_MOCK_DATA) {
     console.log("Using mock mode - answer submission simulated");
@@ -232,7 +235,8 @@ export async function submitAnswer(
       const payload = {
         questionId,
         username,
-        userAnswer
+        userAnswer,
+        score
       };
       
       // Make API call to the backend via the proxy
@@ -251,7 +255,18 @@ export async function submitAnswer(
       }
       
       console.log("Answer submitted successfully");
-      return true;
+      
+      // Try to parse response as JSON to check for additional data like solvingTime
+      try {
+        const data = await response.json();
+        return { 
+          success: true,
+          ...data 
+        };
+      } catch (parseError) {
+        // If we can't parse as JSON, just return success boolean
+        return true;
+      }
     } catch (fetchError: any) {
       // Clear the timeout to prevent memory leaks
       clearTimeout(timeoutId);

@@ -25,9 +25,6 @@ const QuizResults = ({
   // Sample player data - would come from a database in a real app
   const players = [
     { id: 1, name: "You", score: score, isYou: true },
-    { id: 2, name: "Player 2", score: Math.floor(score * 0.8) },
-    { id: 3, name: "Player 3", score: Math.floor(score * 0.6) },
-    { id: 4, name: "Player 4", score: Math.floor(score * 0.4) },
   ].sort((a, b) => b.score - a.score);
 
   // Calculate your rank
@@ -170,7 +167,7 @@ const QuizResults = ({
           </Link>
           
           <Link
-            to="/"
+            to="/dashboard"
             className="cyber-border bg-cyber-dark px-6 py-3 flex items-center justify-center hover:border-cyber-green transition-all"
           >
             <svg className="h-5 w-5 mr-2 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
