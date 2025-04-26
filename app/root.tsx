@@ -4,11 +4,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  LiveReload,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
-import { MultiplayerProvider } from './contexts/MultiplayerContext';
-import { QuestionProvider } from './contexts/QuestionContext';
 
 import "./tailwind.css";
 
@@ -44,24 +41,5 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body className="bg-cyber-background text-white">
-        <QuestionProvider>
-          <MultiplayerProvider>
-            <Outlet />
-          </MultiplayerProvider>
-        </QuestionProvider>
-        <ScrollRestoration />
-        <Scripts />
-        <LiveReload />
-      </body>
-    </html>
-  );
+  return <Outlet />;
 }
