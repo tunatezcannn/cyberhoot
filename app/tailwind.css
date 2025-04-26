@@ -2,11 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
-html,
-body {
-  @apply bg-white dark:bg-gray-950;
+@layer base {
+  html,
+  body {
+    @apply bg-[#141d2b] text-white;
+  }
 
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
+  /* Custom scrollbar for cybersecurity theme */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-[#141d2b];
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#243247] rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#9fef00]/30;
+  }
+}
+
+@layer components {
+  .text-glow {
+    text-shadow: 0 0 10px rgba(159, 239, 0, 0.5);
+  }
+  
+  .cyber-border {
+    @apply relative border border-[#243247] rounded-lg;
+  }
+  
+  .cyber-border::before {
+    content: "";
+    @apply absolute inset-0 -z-10 rounded-lg bg-[#9fef00]/5 blur-sm opacity-0 transition-opacity;
+  }
+  
+  .cyber-border:hover::before {
+    @apply opacity-100;
   }
 }
