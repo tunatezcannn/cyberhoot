@@ -40,7 +40,11 @@ export default function Quiz() {
   
   const [quizStarted, setQuizStarted] = useState(false);
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [quizResults, setQuizResults] = useState<{ answers: Record<number, string>; score: number } | null>(null);
+  const [quizResults, setQuizResults] = useState<{ 
+    answers: Record<number, string>; 
+    score: number;
+    questionPoints: Record<number, number>;
+  } | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [gameCode, setGameCode] = useState<string>("");
@@ -238,7 +242,11 @@ export default function Quiz() {
     setElapsedTime(0);
   };
 
-  const handleQuizComplete = (results: { answers: Record<number, string>; score: number }) => {
+  const handleQuizComplete = (results: { 
+    answers: Record<number, string>; 
+    score: number;
+    questionPoints: Record<number, number>;
+  }) => {
     setQuizCompleted(true);
     setQuizResults(results);
   };
@@ -549,22 +557,23 @@ export default function Quiz() {
                 </motion.div>
               )
             ) : quizCompleted && quizResults ? (
-              // Quiz completed screen
               <motion.div
-                key="quiz-completed"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                key="results"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
               >
-                <QuizResults 
+                <QuizResults
                   score={quizResults.score}
-                  totalQuestions={questions.filter(q => q.type === "multiple-choice").length}
+                  totalQuestions={questions.length}
                   topic={topic}
                   timeTaken={elapsedTime}
                   onRestart={handleRestartQuiz}
-                  multiplayerMode={isMultiplayer || waitingForPlayers}
+                  multiplayerMode={isMultiplayer}
                   difficulty={difficulty}
+                  questions={questions}
+                  userAnswers={quizResults.answers}
+                  questionPoints={quizResults.questionPoints}
                 />
               </motion.div>
             ) : isLoading ? (

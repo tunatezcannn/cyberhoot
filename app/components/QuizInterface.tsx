@@ -16,9 +16,19 @@ type QuestionType = {
 type QuizInterfaceProps = {
   questions: QuestionType[];
   quizType: string;
-  onComplete: (results: { answers: Record<number, string>; score: number }) => void;
+  onComplete: (results: { 
+    answers: Record<number, string>; 
+    score: number;
+    questionPoints: Record<number, number>;
+  }) => void;
   difficulty?: "easy" | "medium" | "hard" | "all";
   baseUrl?: string;
+};
+
+// Helper function to strip letter prefixes from options
+const stripOptionPrefix = (option: string): string => {
+  // Match patterns like "A)", "B) ", "C.", "D. "
+  return option.replace(/^[A-D][\)\.\s]+\s*/i, '');
 };
 
 const QuizInterface = ({
@@ -37,6 +47,7 @@ const QuizInterface = ({
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [questionPoints, setQuestionPoints] = useState<Record<number, number>>({});
   
   const currentQuestion = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
@@ -87,6 +98,12 @@ const QuizInterface = ({
       setIsCorrect(false);
       setStreak(0); // Reset streak on timeout
       
+      // Store zero points for this question
+      setQuestionPoints(prev => ({
+        ...prev,
+        [currentQuestion.id]: 0
+      }));
+      
       // Submit the timed-out answer with score of 0
       if (baseUrl) {
         const username = getUsername();
@@ -112,6 +129,12 @@ const QuizInterface = ({
       setIsCorrect(null); // Neutral state for open-ended
       setStreak(0); // Reset streak on timeout
       
+      // Store zero points for this question
+      setQuestionPoints(prev => ({
+        ...prev,
+        [currentQuestion.id]: 0
+      }));
+      
       // If user has typed something, submit that with a score of 0
       if (textAnswer.trim()) {
         submitOpenEndedAnswer(textAnswer, 0)
@@ -127,12 +150,24 @@ const QuizInterface = ({
   const checkAnswer = (selectedOption: string) => {
     if (currentQuestion.type === "multiple-choice") {
       // Check if the answer is correct by looking at either correctAnswer or answer field
-      const correctValue = currentQuestion.correctAnswer || currentQuestion.answer;
+      let correctValue = currentQuestion.correctAnswer || currentQuestion.answer;
+      
+      // Strip prefix from correctAnswer if needed
+      if (typeof correctValue === 'string') {
+        correctValue = stripOptionPrefix(correctValue);
+      }
+      
       if (correctValue) {
         const isAnswerCorrect = selectedOption === correctValue;
         setIsCorrect(isAnswerCorrect);
         
         const pointsEarned = isAnswerCorrect ? calculatePoints() : 0;
+        
+        // Store points for this question
+        setQuestionPoints(prev => ({
+          ...prev,
+          [currentQuestion.id]: pointsEarned
+        }));
         
         if (isAnswerCorrect) {
           setScore(prev => prev + pointsEarned);
@@ -200,7 +235,8 @@ const QuizInterface = ({
     
     try {
       // Get the option letter (A, B, C, D) based on the index
-      const answerIndex = currentQuestion.options?.findIndex(opt => opt === userAnswer) ?? 0;
+      const cleanOptions = currentQuestion.options?.map(opt => stripOptionPrefix(opt)) || [];
+      const answerIndex = cleanOptions.findIndex(opt => opt === userAnswer) ?? 0;
       const answerLetter = ["A", "B", "C", "D"][answerIndex];
       const username = getUsername();
       
@@ -284,6 +320,15 @@ const QuizInterface = ({
       console.log("Open-ended answer response:", data);
       
       // Add the score to the total score
+      const earnedPoints = data && data.score ? data.score : questionPoints;
+      
+      // Store points for this question
+      setQuestionPoints(prev => ({
+        ...prev,
+        [currentQuestion.id]: earnedPoints
+      }));
+      
+      // Add the score to the total score
       if (data && data.score) {
         setScore(prev => prev + data.score);
       }
@@ -318,8 +363,48 @@ const QuizInterface = ({
     } else {
       // Complete the quiz with final score that includes open-ended questions
       console.log(`Quiz completed with total score: ${score}`);
-      onComplete({ answers, score });
+      handleComplete();
     }
+  };
+
+  const handleComplete = () => {
+    // Save the last question's answer first if it hasn't been saved yet
+    if (currentQuestion && !isAnswered && textAnswer.trim() !== "") {
+      setAnswers(prev => ({
+        ...prev,
+        [currentQuestion.id]: textAnswer
+      }));
+    }
+    
+    // Prepare the answers in the required format
+    // Convert answers to use letter format for multiple choice
+    const formattedAnswers: Record<number, string> = {};
+    
+    questions.forEach(question => {
+      const questionId = question.id;
+      let answer = answers[questionId] || "";
+      
+      // For multiple choice questions, if the answer is the full option text, 
+      // convert it to the letter format (A, B, C, D)
+      if (question.type === "multiple-choice" && question.options) {
+        const cleanOptions = question.options.map(opt => stripOptionPrefix(opt));
+        const index = cleanOptions.findIndex(opt => opt === answer);
+        if (index !== -1) {
+          answer = String.fromCharCode(65 + index); // A, B, C, D
+        }
+      }
+      
+      formattedAnswers[questionId] = answer;
+    });
+    
+    // Calculate final score
+    const finalScore = score; // Use the current score state directly
+    
+    onComplete({ 
+      answers: formattedAnswers, 
+      score: finalScore,
+      questionPoints // Include points per question
+    });
   };
 
   return (
@@ -371,18 +456,25 @@ const QuizInterface = ({
         {currentQuestion.type === "multiple-choice" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {currentQuestion.options?.map((option, index) => {
+              // Strip letter prefix from option text
+              const cleanOption = stripOptionPrefix(option);
+              
               // Determine button styling based on feedback state
               let buttonClasses = "relative w-full text-left cyber-border p-4 transition-all duration-200";
               
+              // Get cleaned version of current answer and correct answer
+              const cleanedCurrentAnswer = answers[currentQuestion.id] ? stripOptionPrefix(answers[currentQuestion.id]) : "";
+              const cleanedCorrectAnswer = currentQuestion.correctAnswer ? stripOptionPrefix(currentQuestion.correctAnswer as string) : "";
+              
               if (feedbackVisible) {
-                if (option === currentQuestion.correctAnswer) {
+                if (cleanOption === cleanedCorrectAnswer) {
                   buttonClasses += " border-green-500 bg-green-500/20 text-white";
-                } else if (answers[currentQuestion.id] === option) {
+                } else if (cleanedCurrentAnswer === cleanOption) {
                   buttonClasses += " border-red-500 bg-red-500/20 text-white";
                 } else {
                   buttonClasses += " opacity-60";
                 }
-              } else if (answers[currentQuestion.id] === option) {
+              } else if (cleanedCurrentAnswer === cleanOption) {
                 buttonClasses += " border-cyber-green bg-cyber-green/10 text-white";
               } else {
                 buttonClasses += " hover:border-cyber-green/50";
@@ -391,7 +483,7 @@ const QuizInterface = ({
               return (
                 <button
                   key={index}
-                  onClick={() => handleOptionSelect(option)}
+                  onClick={() => handleOptionSelect(cleanOption)}
                   className={buttonClasses}
                   disabled={isAnswered}
                 >
@@ -401,18 +493,18 @@ const QuizInterface = ({
                     } flex items-center justify-center font-bold text-cyber-dark`}>
                       {["A", "B", "C", "D"][index % 4]}
                     </div>
-                    <span>{option}</span>
+                    <span>{cleanOption}</span>
                   </div>
                   
                   {/* Feedback icons */}
-                  {feedbackVisible && option === currentQuestion.correctAnswer && (
+                  {feedbackVisible && cleanOption === cleanedCorrectAnswer && (
                     <div className="absolute -right-2 -top-2 bg-green-500 rounded-full p-1">
                       <svg className="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
                     </div>
                   )}
-                  {feedbackVisible && answers[currentQuestion.id] === option && option !== currentQuestion.correctAnswer && (
+                  {feedbackVisible && cleanedCurrentAnswer === cleanOption && cleanOption !== cleanedCorrectAnswer && (
                     <div className="absolute -right-2 -top-2 bg-red-500 rounded-full p-1">
                       <svg className="h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -474,7 +566,7 @@ const QuizInterface = ({
                 <span className="font-medium">
                   {timeLeft === 0 ? "Time's up!" : "Incorrect!"}
                   {currentQuestion.correctAnswer && (
-                    <span className="ml-1">The correct answer was: <span className="text-cyber-green">{currentQuestion.correctAnswer}</span></span>
+                    <span className="ml-1">The correct answer was: <span className="text-cyber-green">{stripOptionPrefix(currentQuestion.correctAnswer as string)}</span></span>
                   )}
                 </span>
               </>

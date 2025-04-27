@@ -1,4 +1,13 @@
 import { Link } from "@remix-run/react";
+import { useState } from "react";
+import ExpandableCard from "./ExpandableCard";
+import QuestionSummary from "./QuestionSummary";
+
+// Helper function to strip letter prefixes from options
+const stripOptionPrefix = (option: string): string => {
+  // Match patterns like "A)", "B) ", "C.", "D. "
+  return option.replace(/^[A-D][\)\.\s]+\s*/i, '');
+};
 
 type QuizResultsProps = {
   score: number;
@@ -8,6 +17,9 @@ type QuizResultsProps = {
   onRestart: () => void;
   multiplayerMode?: boolean;
   difficulty?: "easy" | "medium" | "hard" | "all";
+  questions?: any[]; // Add questions prop
+  userAnswers?: Record<number, string>; // Add user answers prop
+  questionPoints?: Record<number, number>; // Add questionPoints prop
 };
 
 const QuizResults = ({
@@ -18,7 +30,11 @@ const QuizResults = ({
   onRestart,
   multiplayerMode = false,
   difficulty = "all",
+  questions = [], // Default to empty array
+  userAnswers = {}, // Default to empty object
+  questionPoints = {}, // Default to empty object
 }: QuizResultsProps) => {
+  const [showingExplanation, setShowingExplanation] = useState<number | null>(null);
   const minutes = Math.floor(timeTaken / 60);
   const seconds = timeTaken % 60;
   
@@ -101,6 +117,74 @@ const QuizResults = ({
     }
   };
 
+  // Handle explanation button click
+  const handleExplanationClick = (questionId: number) => {
+    // Toggle explanation visibility
+    setShowingExplanation(prev => prev === questionId ? null : questionId);
+    
+    // Here you would normally fetch the explanation from an API
+    // For now, we'll just show/hide a placeholder until the endpoint is implemented
+  };
+
+  // Calculate points for each question
+  const calculateQuestionPoints = (question: any, userAnswer: string) => {
+    if (!question || !userAnswer) return 0;
+    
+    // Check if the answer is correct
+    if (!isAnswerCorrect(question, userAnswer)) return 0;
+    
+    // Apply difficulty multiplier
+    const difficultyMultiplier = question.difficulty === "easy" ? 3 :
+                                 question.difficulty === "medium" ? 5 :
+                                 question.difficulty === "hard" ? 9 : 1;
+                                 
+    return 100 * difficultyMultiplier;
+  };
+
+  // Check if a user answer is correct
+  const isAnswerCorrect = (question: any, userAnswer: string) => {
+    if (!question || !userAnswer) return false;
+    
+    // Handle different API response formats
+    
+    // Format 1: answer field is a single letter (A, B, C, D)
+    if (question.answer && /^[A-D]$/.test(question.answer)) {
+      return userAnswer === question.answer;
+    }
+    
+    // Format 2: answer field is a lowercase letter (a, b, c, d)
+    if (question.answer && /^[a-d]$/.test(question.answer)) {
+      return userAnswer === question.answer.toUpperCase();
+    }
+    
+    // Format 3: correctOptionId field contains a letter
+    if (question.correctOptionId && /^[a-dA-D]$/.test(question.correctOptionId)) {
+      const correctAnswer = question.correctOptionId.toUpperCase();
+      return userAnswer === correctAnswer;
+    }
+    
+    // Format 4: correctAnswer field contains the full option text
+    if (question.correctAnswer && question.options) {
+      // Strip prefixes from both options and correctAnswer
+      const cleanedOptions = question.options.map((opt: string) => stripOptionPrefix(opt));
+      const cleanedCorrectAnswer = stripOptionPrefix(question.correctAnswer);
+      
+      // Find index of the cleaned correct answer in the cleaned options
+      const index = cleanedOptions.findIndex(
+        (option: string) => option === cleanedCorrectAnswer || 
+                           option.includes(cleanedCorrectAnswer)
+      );
+      
+      if (index !== -1) {
+        const correctOptionLetter = String.fromCharCode(65 + index);
+        return userAnswer === correctOptionLetter;
+      }
+    }
+    
+    // Default case: direct comparison
+    return userAnswer === question.answer;
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 text-center">
@@ -153,6 +237,47 @@ const QuizResults = ({
             ))}
           </div>
         </div>
+        
+        {/* Question review section with expandable card */}
+        {questions.length > 0 && (
+          <div className="mb-6">
+            <ExpandableCard title="Question Review">
+              <div className="space-y-4">
+                {questions.map((question) => (
+                  <QuestionSummary
+                    key={question.id}
+                    question={question}
+                    userAnswer={userAnswers[question.id] || ""}
+                    isCorrect={isAnswerCorrect(question, userAnswers[question.id] || "")}
+                    points={questionPoints[question.id] || calculateQuestionPoints(question, userAnswers[question.id] || "")}
+                    onExplanationClick={handleExplanationClick}
+                  />
+                ))}
+              </div>
+              
+              {/* Placeholder for explanation modal - will be implemented fully in future */}
+              {showingExplanation !== null && (
+                <div className="mt-4 p-4 bg-cyber-navy-light rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium text-cyber-green">Explanation</h4>
+                    <button 
+                      onClick={() => setShowingExplanation(null)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-300">
+                    The explanation feature will be fully implemented in an upcoming update. 
+                    This will provide detailed explanations for each question and answer.
+                  </p>
+                </div>
+              )}
+            </ExpandableCard>
+          </div>
+        )}
         
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-4">
@@ -214,14 +339,16 @@ const QuizResults = ({
       
       {/* Security tip */}
       <div className="mt-6 cyber-border p-4 bg-cyber-dark/50 flex items-start space-x-3">
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 h-10 w-10 bg-cyber-navy rounded-full flex items-center justify-center">
           <svg className="h-6 w-6 text-cyber-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
+          <h4 className="font-medium text-cyber-green mb-1">Security Tip</h4>
           <p className="text-sm text-gray-300">
-            <span className="font-medium text-cyber-green">Security Tip:</span> Remember that continuous learning is essential in cybersecurity. Threats evolve constantly, so stay updated with the latest security practices.
+            Always enable two-factor authentication (2FA) for all your important accounts. 
+            This adds an extra layer of security beyond just a password.
           </p>
         </div>
       </div>
