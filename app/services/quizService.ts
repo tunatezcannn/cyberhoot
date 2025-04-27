@@ -115,7 +115,7 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
     },
     {
       id: 8,
-      text: "Which encryption algorithm is considered the most secure as of 2023?",
+      text: "Which encryption algorithm is considered the most secure as of 2025?",
       type: "multiple-choice",
       options: [
         "MD5",
