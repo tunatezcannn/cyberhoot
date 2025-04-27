@@ -282,4 +282,74 @@ export async function submitAnswer(
     console.error("Failed to submit answer:", error);
     return false;
   }
+}
+
+/**
+ * Get explanation for a question
+ */
+export async function getExplanation(
+  questionId: string | number,
+  username: string
+): Promise<{ questionId: string | number; explanation: string }> {
+  // Skip API calls entirely if mock data is enabled
+  if (USE_MOCK_DATA) {
+    console.log("Using mock data for explanation");
+    return {
+      questionId,
+      explanation: `This is a mock explanation for question ${questionId}. In a real environment, this would provide detailed information about the correct answer and why other options are incorrect.`
+    };
+  }
+  
+  try {
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    
+    try {
+      // Use proxy URL to avoid CORS issues
+      const url = `/api/ws/questions/getExplanation`;
+      
+      const payload = {
+        questionId,
+        username
+      };
+      
+      // Make API call to the backend via the proxy
+      const response = await fetch(url, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching explanation: ${response.status} ${response.statusText}`);
+      }
+      
+      // Parse the response
+      const data = await response.json();
+      return data;
+    } catch (fetchError: any) {
+      // Clear the timeout to prevent memory leaks
+      clearTimeout(timeoutId);
+      
+      // Check if it was a timeout
+      if (fetchError.name === 'AbortError') {
+        throw new Error("API request timed out");
+      }
+      
+      throw fetchError;
+    }
+  } catch (error) {
+    console.error("Failed to fetch explanation:", error);
+    
+    // Return a mock explanation
+    return {
+      questionId,
+      explanation: `We couldn't load the explanation at this time. This could be due to network issues or the explanation may not be available for this question yet.`
+    };
+  }
 } 

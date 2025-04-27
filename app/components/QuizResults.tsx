@@ -2,6 +2,9 @@ import { Link } from "@remix-run/react";
 import { useState } from "react";
 import ExpandableCard from "./ExpandableCard";
 import QuestionSummary from "./QuestionSummary";
+import { getExplanation } from "~/services/questionService";
+import { getUsername } from "~/services/authService";
+import ReactMarkdown from "react-markdown";
 
 // Helper function to strip letter prefixes from options
 const stripOptionPrefix = (option: string): string => {
@@ -35,6 +38,7 @@ const QuizResults = ({
   questionPoints = {}, // Default to empty object
 }: QuizResultsProps) => {
   const [showingExplanation, setShowingExplanation] = useState<number | null>(null);
+  const [explanationText, setExplanationText] = useState<string>("");
   const minutes = Math.floor(timeTaken / 60);
   const seconds = timeTaken % 60;
   
@@ -118,12 +122,32 @@ const QuizResults = ({
   };
 
   // Handle explanation button click
-  const handleExplanationClick = (questionId: number) => {
+  const handleExplanationClick = async (questionId: number) => {
     // Toggle explanation visibility
-    setShowingExplanation(prev => prev === questionId ? null : questionId);
+    if (showingExplanation === questionId) {
+      setShowingExplanation(null);
+      return;
+    }
     
-    // Here you would normally fetch the explanation from an API
-    // For now, we'll just show/hide a placeholder until the endpoint is implemented
+    try {
+      // Clear previous explanation before showing loading state for the new one
+      setExplanationText("");
+      
+      // Show loading state
+      setShowingExplanation(questionId);
+      
+      // Get username from auth service
+      const username = getUsername() || "anonymous";
+      
+      // Fetch explanation from the API
+      const result = await getExplanation(questionId, username);
+      
+      // Set the explanation in state
+      setExplanationText(result.explanation);
+    } catch (error) {
+      console.error("Error fetching explanation:", error);
+      setExplanationText("Failed to load explanation. Please try again later.");
+    }
   };
 
   // Calculate points for each question
@@ -255,7 +279,7 @@ const QuizResults = ({
                 ))}
               </div>
               
-              {/* Placeholder for explanation modal - will be implemented fully in future */}
+              {/* Explanation modal */}
               {showingExplanation !== null && (
                 <div className="mt-4 p-4 bg-cyber-navy-light rounded-lg">
                   <div className="flex justify-between items-center mb-2">
@@ -269,10 +293,18 @@ const QuizResults = ({
                       </svg>
                     </button>
                   </div>
-                  <p className="text-sm text-gray-300">
-                    The explanation feature will be fully implemented in an upcoming update. 
-                    This will provide detailed explanations for each question and answer.
-                  </p>
+                  <div className="text-sm text-gray-300">
+                    {explanationText ? (
+                      <div className="markdown-content">
+                        <ReactMarkdown>{explanationText}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="w-5 h-5 border-t-2 border-cyber-green border-solid rounded-full animate-spin"></div>
+                        <span className="ml-2">Loading explanation...</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </ExpandableCard>
