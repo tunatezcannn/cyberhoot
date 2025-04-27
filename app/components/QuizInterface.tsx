@@ -40,7 +40,27 @@ const QuizInterface = ({
 }: QuizInterfaceProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [timeLeft, setTimeLeft] = useState(30); // Default to 30 seconds initially
+  
+  // Get the initial time for the first question, defaulting to difficulty-based time if not available
+  const getInitialTime = () => {
+    if (questions.length > 0 && questions[0]) {
+      if (questions[0].solvingTime && questions[0].solvingTime > 0) {
+        console.log(`Initial question solvingTime: ${questions[0].solvingTime}`);
+        return questions[0].solvingTime;
+      }
+      
+      // Default times based on difficulty if no solvingTime is provided
+      switch(questions[0].difficulty) {
+        case "easy": return 20;
+        case "medium": return 30;
+        case "hard": return 45;
+        default: return 30;
+      }
+    }
+    return 30; // Default fallback
+  };
+  
+  const [timeLeft, setTimeLeft] = useState(getInitialTime);
   const [isAnswered, setIsAnswered] = useState(false);
   const [textAnswer, setTextAnswer] = useState("");
   const [feedbackVisible, setFeedbackVisible] = useState(false);
@@ -56,7 +76,29 @@ const QuizInterface = ({
   // Update timeLeft when questions array changes or current question index changes
   useEffect(() => {
     if (questions.length > 0 && questions[currentQuestionIndex]) {
-      setTimeLeft(questions[currentQuestionIndex].solvingTime || 30);
+      const question = questions[currentQuestionIndex];
+      
+      // Log the question's solvingTime to help with debugging
+      console.log(`Question ${currentQuestionIndex + 1} solvingTime:`, question.solvingTime);
+      
+      if (question.solvingTime && question.solvingTime > 0) {
+        setTimeLeft(question.solvingTime);
+      } else {
+        // Default times based on difficulty if no solvingTime is provided
+        switch(question.difficulty) {
+          case "easy": 
+            setTimeLeft(20);
+            break;
+          case "medium": 
+            setTimeLeft(30);
+            break;
+          case "hard": 
+            setTimeLeft(45);
+            break;
+          default: 
+            setTimeLeft(30);
+        }
+      }
     }
   }, [questions, currentQuestionIndex]);
 
@@ -70,14 +112,14 @@ const QuizInterface = ({
           clearInterval(timer);
           // Auto submit current answer when time runs out
           handleTimeUp();
-          return currentQuestion.solvingTime || 30;
+          return 0;
         }
         return prev - 1;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [currentQuestionIndex, isAnswered, feedbackVisible, currentQuestion?.solvingTime]);
+  }, [currentQuestionIndex, isAnswered, feedbackVisible]);
 
   // Reset state for new question
   useEffect(() => {
@@ -116,8 +158,15 @@ const QuizInterface = ({
         )
         .then(result => {
           // Check if the response includes solvingTime
-          if (typeof result === 'object' && 'solvingTime' in result && result.solvingTime) {
-            setTimeLeft(result.solvingTime);
+          if (typeof result === 'object' && 'solvingTime' in result) {
+            console.log("Received solvingTime from server:", result.solvingTime);
+            
+            // Update the solvingTime for the next question in our questions array
+            if (currentQuestionIndex < questions.length - 1) {
+              const nextQuestionIndex = currentQuestionIndex + 1;
+              questions[nextQuestionIndex].solvingTime = result.solvingTime;
+              console.log(`Updated question ${nextQuestionIndex + 1} solvingTime to ${result.solvingTime}`);
+            }
           }
         })
         .catch(error => console.error("Error submitting timeout answer:", error));
@@ -257,8 +306,15 @@ const QuizInterface = ({
         console.log("Answer submitted successfully");
         
         // Check if the response includes solvingTime
-        if (typeof result === 'object' && 'solvingTime' in result && result.solvingTime) {
-          setTimeLeft(result.solvingTime);
+        if (typeof result === 'object' && 'solvingTime' in result) {
+          console.log("Received solvingTime from server:", result.solvingTime);
+          
+          // Update the solvingTime for the next question in our questions array
+          if (currentQuestionIndex < questions.length - 1) {
+            const nextQuestionIndex = currentQuestionIndex + 1;
+            questions[nextQuestionIndex].solvingTime = result.solvingTime;
+            console.log(`Updated question ${nextQuestionIndex + 1} solvingTime to ${result.solvingTime}`);
+          }
         }
       }
     } catch (error) {
@@ -335,7 +391,14 @@ const QuizInterface = ({
       
       // Update solving time if provided in the response
       if (data && data.solvingTime) {
-        setTimeLeft(data.solvingTime);
+        console.log("Received solvingTime from server (open-ended):", data.solvingTime);
+        
+        // Update the solvingTime for the next question
+        if (currentQuestionIndex < questions.length - 1) {
+          const nextQuestionIndex = currentQuestionIndex + 1;
+          questions[nextQuestionIndex].solvingTime = data.solvingTime;
+          console.log(`Updated question ${nextQuestionIndex + 1} solvingTime to ${data.solvingTime}`);
+        }
       }
       
       return true;

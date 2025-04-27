@@ -496,7 +496,12 @@ export default function Quiz() {
                         "Please wait while we prepare your questions..."
                       ) : (
                         <>
-                          You'll have 20 seconds per question. The quiz will contain {questionCount} questions on {topic}.
+                          You'll have {
+                            difficulty === "easy" ? "30" : 
+                            difficulty === "medium" ? "50" : 
+                            difficulty === "hard" ? "90" : 
+                            "30-90"
+                          } seconds per question. The quiz will contain {questionCount} questions on {topic}.
                           {difficulty !== "all" && ` Difficulty level: ${difficulty}.`}
                         </>
                       )}

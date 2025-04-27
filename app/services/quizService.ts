@@ -13,6 +13,7 @@ export type QuizQuestion = {
   answer?: string;
   difficulty: "easy" | "medium" | "hard";
   username?: string;
+  solvingTime?: number;
 };
 
 // Static fallback questions in case the API is unreachable
@@ -29,7 +30,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "Sharing your password with trusted friends"
       ],
       correctAnswer: "Using a unique password for each account",
-      difficulty: "easy"
+      difficulty: "easy",
+      solvingTime: 20
     },
     {
       id: 2,
@@ -42,7 +44,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "A type of firewall"
       ],
       correctAnswer: "A fraudulent attempt to obtain sensitive information by disguising as a trustworthy entity",
-      difficulty: "easy"
+      difficulty: "easy",
+      solvingTime: 20
     },
     {
       id: 3,
@@ -55,7 +58,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "Email comes from a colleague you regularly work with"
       ],
       correctAnswer: "Email comes from a colleague you regularly work with",
-      difficulty: "easy"
+      difficulty: "easy",
+      solvingTime: 20
     }
   ],
   "medium": [
@@ -64,39 +68,42 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
       text: "What is two-factor authentication?",
       type: "multiple-choice",
       options: [
-        "Logging in twice with the same password",
-        "A security method requiring two different authentication factors",
-        "Having two different passwords for the same account",
-        "A security bypass method"
+        "Using two different passwords for the same account",
+        "Having two people approve access to an account",
+        "Using two different authentication methods to verify your identity",
+        "Logging in twice for extra security"
       ],
-      correctAnswer: "A security method requiring two different authentication factors",
-      difficulty: "medium"
+      correctAnswer: "Using two different authentication methods to verify your identity",
+      difficulty: "medium",
+      solvingTime: 30
     },
     {
       id: 5,
-      text: "Which of the following is NOT typically considered a factor in multi-factor authentication?",
+      text: "Which of the following is considered the most secure password?",
       type: "multiple-choice",
       options: [
-        "Something you know (password)",
-        "Something you have (phone)",
-        "Something you are (fingerprint)",
-        "Someone you know (friend verification)"
+        "Password123!",
+        "p@ssw0rd",
+        "Tr0ub4dor&3",
+        "correcthorsebatterystaple"
       ],
-      correctAnswer: "Someone you know (friend verification)",
-      difficulty: "medium"
+      correctAnswer: "correcthorsebatterystaple",
+      difficulty: "medium",
+      solvingTime: 30
     },
     {
       id: 6,
-      text: "What is a man-in-the-middle attack?",
+      text: "What is a firewall?",
       type: "multiple-choice",
       options: [
-        "A physical attack on a server room",
-        "An attack where the attacker secretly relays/alters communications",
-        "A virus that affects only middle-level employees",
-        "A DoS attack on network infrastructure"
+        "A physical barrier that prevents computer theft",
+        "A network security device that monitors traffic",
+        "A tool for extinguishing server fires",
+        "A backup system for data recovery"
       ],
-      correctAnswer: "An attack where the attacker secretly relays/alters communications",
-      difficulty: "medium"
+      correctAnswer: "A network security device that monitors traffic",
+      difficulty: "medium",
+      solvingTime: 30
     }
   ],
   "hard": [
@@ -111,7 +118,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "To maintain user sessions across multiple browsers"
       ],
       correctAnswer: "To prevent cross-site request forgery attacks",
-      difficulty: "hard"
+      difficulty: "hard",
+      solvingTime: 45
     },
     {
       id: 8,
@@ -124,7 +132,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "RC4"
       ],
       correctAnswer: "AES-256",
-      difficulty: "hard"
+      difficulty: "hard",
+      solvingTime: 45
     },
     {
       id: 9,
@@ -137,7 +146,8 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
         "A vulnerability that has no impact on systems"
       ],
       correctAnswer: "A vulnerability unknown to those who should be fixing it",
-      difficulty: "hard"
+      difficulty: "hard",
+      solvingTime: 45
     }
   ],
   "open-ended": [
@@ -145,19 +155,22 @@ export const FALLBACK_QUESTIONS: Record<string, QuizQuestion[]> = {
       id: 10,
       text: "Explain the concept of defense in depth and why it's important in cybersecurity.",
       type: "open-ended",
-      difficulty: "medium"
+      difficulty: "medium",
+      solvingTime: 60
     },
     {
       id: 11,
       text: "Describe the potential security implications of using public Wi-Fi networks.",
       type: "open-ended",
-      difficulty: "easy"
+      difficulty: "easy",
+      solvingTime: 60
     },
     {
       id: 12,
       text: "Explain the difference between symmetric and asymmetric encryption and give an example use case for each.",
       type: "open-ended",
-      difficulty: "hard"
+      difficulty: "hard",
+      solvingTime: 60
     }
   ]
 };
@@ -206,7 +219,8 @@ function convertMcqQuestion(question: McqQuestion, difficultyLevel: "easy" | "me
     type: "multiple-choice",
     options: question.options,
     correctAnswer: correctAnswer,
-    difficulty: difficultyLevel
+    difficulty: difficultyLevel,
+    solvingTime: question.solvingTime || getDifficultyDefaultTime(difficultyLevel)
   };
 }
 
@@ -218,8 +232,25 @@ function convertOpenQuestion(question: OpenQuestion, difficultyLevel: "easy" | "
     id: question.id ? parseInt(question.id.toString()) : Math.floor(Math.random() * 1000),
     text: question.text,
     type: "open-ended",
-    difficulty: difficultyLevel
+    difficulty: difficultyLevel,
+    solvingTime: question.solvingTime || getDifficultyDefaultTime(difficultyLevel)
   };
+}
+
+/**
+ * Get default time based on difficulty level
+ */
+function getDifficultyDefaultTime(difficulty: "easy" | "medium" | "hard"): number {
+  switch (difficulty) {
+    case "easy":
+      return 20;
+    case "medium":
+      return 30;
+    case "hard":
+      return 45;
+    default:
+      return 30;
+  }
 }
 
 /**
@@ -249,13 +280,23 @@ function getFallbackQuestions(
           if (questionType === "open-ended" && q.type === "open-ended") return true;
           return false;
         });
+    
+    // Add solvingTime if not present
+    const questionsWithTime = filteredQuestions.map(q => ({
+      ...q,
+      solvingTime: q.solvingTime || getDifficultyDefaultTime(q.difficulty)
+    }));
         
-    questions = [...questions, ...filteredQuestions];
+    questions = [...questions, ...questionsWithTime];
   }
   
   // If we need open-ended questions specifically
   if (questionType === "open-ended" || questionType === "all") {
-    questions = [...questions, ...FALLBACK_QUESTIONS["open-ended"]];
+    const openEndedQuestions = FALLBACK_QUESTIONS["open-ended"].map(q => ({
+      ...q,
+      solvingTime: q.solvingTime || getDifficultyDefaultTime(q.difficulty)
+    }));
+    questions = [...questions, ...openEndedQuestions];
   }
   
   return questions;
