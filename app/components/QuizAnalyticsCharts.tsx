@@ -27,6 +27,11 @@ ChartJS.register(
   Legend
 );
 
+// Helper function to truncate long text
+const truncateText = (text: string, maxLength: number = 20): string => {
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+};
+
 // Common chart options
 const chartOptions = {
   responsive: true,
@@ -48,11 +53,23 @@ const chartOptions = {
         size: 16,
       },
     },
+    tooltip: {
+      callbacks: {
+        label: function(context: any) {
+          return context.raw;
+        },
+        title: function(tooltipItems: any[]) {
+          return tooltipItems[0].label;
+        }
+      }
+    }
   },
   scales: {
     x: {
       ticks: {
         color: '#9ca3af', // text-gray-400
+        maxRotation: 45,
+        minRotation: 45
       },
       grid: {
         color: 'rgba(75, 85, 99, 0.2)', // text-gray-600 with opacity
@@ -127,7 +144,7 @@ const QuizAnalyticsCharts: React.FC<QuizAnalyticsChartsProps> = ({ quizAnalytics
   );
   
   const completionsData = {
-    labels: sortedTopicNames,
+    labels: sortedTopicNames.map(topic => truncateText(topic, 15)),
     datasets: [
       {
         label: 'Answered Questions',
@@ -168,7 +185,7 @@ const QuizAnalyticsCharts: React.FC<QuizAnalyticsChartsProps> = ({ quizAnalytics
   }, {} as Record<string, number>);
   
   const quizTypeData = {
-    labels: Object.keys(quizTypes),
+    labels: Object.keys(quizTypes).map(type => truncateText(type, 15)),
     datasets: [
       {
         data: Object.values(quizTypes),
@@ -184,21 +201,18 @@ const QuizAnalyticsCharts: React.FC<QuizAnalyticsChartsProps> = ({ quizAnalytics
   };
   
   // Calculate average score per quiz
+  const filteredQuizzes = quizAnalytics.filter(quiz => quiz.answeredQuestions.length > 0);
   const avgScoreData = {
-    labels: quizAnalytics
-      .filter(quiz => quiz.answeredQuestions.length > 0)
-      .map(quiz => quiz.quizName),
+    labels: filteredQuizzes.map(quiz => truncateText(quiz.quizName, 15)),
     datasets: [
       {
         label: 'Average Score',
-        data: quizAnalytics
-          .filter(quiz => quiz.answeredQuestions.length > 0)
-          .map(quiz => {
-            const totalScore = quiz.answeredQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
-            return quiz.answeredQuestions.length > 0 
-              ? totalScore / quiz.answeredQuestions.length 
-              : 0;
-          }),
+        data: filteredQuizzes.map(quiz => {
+          const totalScore = quiz.answeredQuestions.reduce((sum, q) => sum + (q.score || 0), 0);
+          return quiz.answeredQuestions.length > 0 
+            ? totalScore / quiz.answeredQuestions.length 
+            : 0;
+        }),
         backgroundColor: chartColors.secondary,
         borderColor: chartColors.secondary,
       },
@@ -207,7 +221,7 @@ const QuizAnalyticsCharts: React.FC<QuizAnalyticsChartsProps> = ({ quizAnalytics
 
   // Calculate average score per topic
   const topicScoreData = {
-    labels: sortedTopicNames,
+    labels: sortedTopicNames.map(topic => truncateText(topic, 15)),
     datasets: [
       {
         label: 'Accuracy %',

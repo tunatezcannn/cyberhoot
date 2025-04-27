@@ -37,8 +37,7 @@ const QuizResults = ({
   userAnswers = {}, // Default to empty object
   questionPoints = {}, // Default to empty object
 }: QuizResultsProps) => {
-  const [showingExplanation, setShowingExplanation] = useState<number | null>(null);
-  const [explanationText, setExplanationText] = useState<string>("");
+  const [showingExplanation, setShowingExplanation] = useState<Record<number, string>>({});
   const minutes = Math.floor(timeTaken / 60);
   const seconds = timeTaken % 60;
   
@@ -124,17 +123,21 @@ const QuizResults = ({
   // Handle explanation button click
   const handleExplanationClick = async (questionId: number) => {
     // Toggle explanation visibility
-    if (showingExplanation === questionId) {
-      setShowingExplanation(null);
+    if (showingExplanation[questionId]) {
+      setShowingExplanation(prev => {
+        const newState = {...prev};
+        delete newState[questionId];
+        return newState;
+      });
       return;
     }
     
     try {
-      // Clear previous explanation before showing loading state for the new one
-      setExplanationText("");
-      
-      // Show loading state
-      setShowingExplanation(questionId);
+      // Set loading state for this specific question
+      setShowingExplanation(prev => ({
+        ...prev,
+        [questionId]: ""
+      }));
       
       // Get username from auth service
       const username = getUsername() || "anonymous";
@@ -142,11 +145,17 @@ const QuizResults = ({
       // Fetch explanation from the API
       const result = await getExplanation(questionId, username);
       
-      // Set the explanation in state
-      setExplanationText(result.explanation);
+      // Set the explanation in state for this specific question
+      setShowingExplanation(prev => ({
+        ...prev,
+        [questionId]: result.explanation
+      }));
     } catch (error) {
       console.error("Error fetching explanation:", error);
-      setExplanationText("Failed to load explanation. Please try again later.");
+      setShowingExplanation(prev => ({
+        ...prev,
+        [questionId]: "Failed to load explanation. Please try again later."
+      }));
     }
   };
 
@@ -268,45 +277,46 @@ const QuizResults = ({
             <ExpandableCard title="Question Review">
               <div className="space-y-4">
                 {questions.map((question) => (
-                  <QuestionSummary
-                    key={question.id}
-                    question={question}
-                    userAnswer={userAnswers[question.id] || ""}
-                    isCorrect={isAnswerCorrect(question, userAnswers[question.id] || "")}
-                    points={questionPoints[question.id] || calculateQuestionPoints(question, userAnswers[question.id] || "")}
-                    onExplanationClick={handleExplanationClick}
-                  />
-                ))}
-              </div>
-              
-              {/* Explanation modal */}
-              {showingExplanation !== null && (
-                <div className="mt-4 p-4 bg-cyber-navy-light rounded-lg">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium text-cyber-green">Explanation</h4>
-                    <button 
-                      onClick={() => setShowingExplanation(null)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="text-sm text-gray-300">
-                    {explanationText ? (
-                      <div className="markdown-content">
-                        <ReactMarkdown>{explanationText}</ReactMarkdown>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="w-5 h-5 border-t-2 border-cyber-green border-solid rounded-full animate-spin"></div>
-                        <span className="ml-2">Loading explanation...</span>
+                  <div key={question.id} className="mb-4">
+                    <QuestionSummary
+                      question={question}
+                      userAnswer={userAnswers[question.id] || ""}
+                      isCorrect={isAnswerCorrect(question, userAnswers[question.id] || "")}
+                      points={questionPoints[question.id] || calculateQuestionPoints(question, userAnswers[question.id] || "")}
+                      onExplanationClick={handleExplanationClick}
+                    />
+                    
+                    {/* Explanation directly below the question */}
+                    {showingExplanation[question.id] !== undefined && (
+                      <div className="mt-2 p-4 bg-cyber-navy-light rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-medium text-cyber-green">Explanation</h4>
+                          <button 
+                            onClick={() => handleExplanationClick(question.id)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-300">
+                          {showingExplanation[question.id] ? (
+                            <div className="markdown-content">
+                              <ReactMarkdown>{showingExplanation[question.id]}</ReactMarkdown>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="w-5 h-5 border-t-2 border-cyber-green border-solid rounded-full animate-spin"></div>
+                              <span className="ml-2">Loading explanation...</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </ExpandableCard>
           </div>
         )}

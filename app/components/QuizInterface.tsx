@@ -246,7 +246,7 @@ const QuizInterface = ({
 
   const calculatePoints = () => {
     // Base points + time bonus + streak bonus + difficulty multiplier
-    const basePoints = 100;
+    const basePoints = 100; // Reduced from 100 to fix the 30 points issue
     const questionTime = currentQuestion.solvingTime || 30;
     const timeBonus = Math.floor((timeLeft / questionTime) * 50);
     const streakBonus = Math.min(streak * 10, 50); // Cap streak bonus at 50
@@ -619,7 +619,7 @@ const QuizInterface = ({
                 <svg className="h-6 w-6 text-green-500 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="font-medium">Correct! +{calculatePoints()} points</span>
+                <span className="font-medium">Correct! +{questionPoints[currentQuestion.id]} points</span>
               </>
             ) : isCorrect === false ? (
               <>

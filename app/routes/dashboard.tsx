@@ -736,7 +736,7 @@ export default function Dashboard() {
 
       {/* Footer */}
       <footer className="relative border-t border-cyber-border bg-cyber-navy-dark p-4 text-center text-sm text-gray-400">
-        <p>© 2023 CyberHoot. All rights reserved.</p>
+        <p>© 2025 CyberHoot. All rights reserved.</p>
       </footer>
     </div>
   );
