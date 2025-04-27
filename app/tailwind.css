@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    @apply bg-[#141d2b] text-white;
+  }
+
+  /* Custom scrollbar for cybersecurity theme */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    @apply bg-[#141d2b];
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#243247] rounded-full;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#9fef00]/30;
+  }
+}
+
+@layer components {
+  .text-glow {
+    text-shadow: 0 0 10px rgba(159, 239, 0, 0.5);
+  }
+  
+  .cyber-border {
+    @apply relative border border-[#243247] rounded-lg;
+  }
+  
+  .cyber-border::before {
+    content: "";
+    @apply absolute inset-0 -z-10 rounded-lg bg-[#9fef00]/5 blur-sm opacity-0 transition-opacity;
+  }
+  
+  .cyber-border:hover::before {
+    @apply opacity-100;
+  }
+  
+  /* Markdown content styling */
+  .markdown-content {
+    @apply text-gray-300 leading-relaxed;
+  }
+  
+  .markdown-content h1, 
+  .markdown-content h2, 
+  .markdown-content h3, 
+  .markdown-content h4 {
+    @apply text-cyber-green font-medium my-3;
+  }
+  
+  .markdown-content h1 {
+    @apply text-xl;
+  }
+  
+  .markdown-content h2 {
+    @apply text-lg;
+  }
+  
+  .markdown-content h3, 
+  .markdown-content h4 {
+    @apply text-base;
+  }
+  
+  .markdown-content p {
+    @apply my-2;
+  }
+  
+  .markdown-content ul, 
+  .markdown-content ol {
+    @apply my-2 pl-5;
+  }
+  
+  .markdown-content ul {
+    @apply list-disc;
+  }
+  
+  .markdown-content ol {
+    @apply list-decimal;
+  }
+  
+  .markdown-content li {
+    @apply my-1;
+  }
+  
+  .markdown-content a {
+    @apply text-cyber-green underline hover:text-[#9fef00];
+  }
+  
+  .markdown-content code {
+    @apply bg-[#1a2436] text-[#9fef00] px-1 py-0.5 rounded text-sm font-mono;
+  }
+  
+  .markdown-content pre {
+    @apply bg-[#1a2436] p-3 rounded-lg my-3 overflow-x-auto;
+  }
+  
+  .markdown-content blockquote {
+    @apply border-l-4 border-cyber-green pl-3 my-3 italic;
+  }
+}
