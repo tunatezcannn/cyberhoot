@@ -11,7 +11,7 @@ import java.net.http.HttpResponse;
 public final class OpenAPIUtils {
 
     private static final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private static final String API_KEY = "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";   // <--  secure!
+    private static final String API_KEY = "KEY";
 
     public static String sendRequest(String prompt) {
         if (API_KEY == null || API_KEY.isBlank()) {
