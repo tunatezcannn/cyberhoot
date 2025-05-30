@@ -62,9 +62,16 @@ public final class Prompts {
             Candidate answer: %s""";
 
     public static final String EXPLAIN_PROMPT = """
-            Explain concisely why the following is the correct answer.
-            Question: %s
-            Correct answer: %s""";
+            Generate a short concise explanation (max 100 words) in **Markdown** format explaining why the following answer is correct.  
+            Use headings, bullet points, or italics to enhance readability.
+
+            **Question:**  
+            %s
+
+            **Correct Answer:**  
+            %s
+            """;
+
 
     private Prompts() {
     }

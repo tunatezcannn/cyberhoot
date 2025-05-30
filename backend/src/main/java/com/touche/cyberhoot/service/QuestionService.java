@@ -171,9 +171,6 @@ public class QuestionService {
         Question q = questionRepository.findById(input.getQuestionId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid question id"));
 
-        if (!"mcq".equals(q.getQuestionType()))
-            throw new IllegalArgumentException("Explanations are only available for MCQ questions");
-
         String p = Prompts.EXPLAIN_PROMPT.formatted(q.getQuestionText(), q.getCorrect());
         String expl = extract(OpenAPIUtils.sendRequest(p));
 
